@@ -354,6 +354,26 @@
         <label for="standin-scale">Scale</label>
         <input type="number" id="standin-scale" value="1" min="0.001" step="0.01">
       </div>
+      <div class="transform-grid">
+        <div class="field-row">
+          <div class="field-group">
+            <label>Position (m)</label>
+            <div class="inline-fields">
+              <input type="number" id="standin-pos-x" value="0" step="0.01" title="X">
+              <input type="number" id="standin-pos-y" value="0" step="0.01" title="Y">
+              <input type="number" id="standin-pos-z" value="0" step="0.01" title="Z">
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Rotation (&deg;)</label>
+            <div class="inline-fields">
+              <input type="number" id="standin-rot-x" value="0" step="1" title="RX">
+              <input type="number" id="standin-rot-y" value="0" step="1" title="RY">
+              <input type="number" id="standin-rot-z" value="0" step="1" title="RZ">
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1062,11 +1082,19 @@ fetchOBJ('meshes/standin.obj', standin, standinMat).then(() => applyStandinScale
 const standinInput = document.getElementById('file-standin');
 const standinFn    = document.getElementById('fn-standin');
 const standinScaleInput = document.getElementById('standin-scale');
+const standinPosXInput = document.getElementById('standin-pos-x');
+const standinPosYInput = document.getElementById('standin-pos-y');
+const standinPosZInput = document.getElementById('standin-pos-z');
+const standinRotXInput = document.getElementById('standin-rot-x');
+const standinRotYInput = document.getElementById('standin-rot-y');
+const standinRotZInput = document.getElementById('standin-rot-z');
 
 function applyStandinScale() {
   const s = parseFloat(standinScaleInput.value);
   if (isNaN(s) || s <= 0) return;
   for (const m of standin.meshes) m.scale.setScalar(s);
+  // Also apply any position/rotation edits after scaling
+  applyStandinTransform();
 }
 
 standinInput.addEventListener('change', e => {
@@ -1083,6 +1111,27 @@ standinInput.addEventListener('change', e => {
 });
 
 standinScaleInput.addEventListener('input', applyStandinScale);
+// Apply position/rotation from inputs to all standin meshes
+function applyStandinTransform() {
+  const px = parseFloat(standinPosXInput.value);
+  const py = parseFloat(standinPosYInput.value);
+  const pz = parseFloat(standinPosZInput.value);
+  const rx = parseFloat(standinRotXInput.value) * Math.PI / 180;
+  const ry = parseFloat(standinRotYInput.value) * Math.PI / 180;
+  const rz = parseFloat(standinRotZInput.value) * Math.PI / 180;
+
+  for (const m of standin.meshes) {
+    if (!isNaN(px) && !isNaN(py) && !isNaN(pz)) m.position.set(px, py, pz);
+    if (!isNaN(rx) && !isNaN(ry) && !isNaN(rz)) m.rotation.set(rx, ry, rz);
+  }
+}
+
+standinPosXInput.addEventListener('input', applyStandinTransform);
+standinPosYInput.addEventListener('input', applyStandinTransform);
+standinPosZInput.addEventListener('input', applyStandinTransform);
+standinRotXInput.addEventListener('input', applyStandinTransform);
+standinRotYInput.addEventListener('input', applyStandinTransform);
+standinRotZInput.addEventListener('input', applyStandinTransform);
 
 // ================================================================
 // RENDER LOOP
