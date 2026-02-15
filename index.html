@@ -444,7 +444,7 @@ scene.background = new THREE.Color(0x0e0e0e);
 scene.fog = new THREE.Fog(0x0e0e0e, 20, 60);
 
 const camera = new THREE.PerspectiveCamera(focalToFov(25), window.innerWidth / window.innerHeight, 0.05, 200);
-camera.position.set(0, 1.7, 5);
+camera.position.set(0, 1.7, 10);
 
 // Lighting
 scene.add(new THREE.AmbientLight(0xfff0e0, 0.4));
@@ -635,7 +635,7 @@ function updateCamera(dt) {
 // ================================================================
 // FOV / LENS SYSTEM
 // ================================================================
-let currentLens = LENSES[3]; // Standard 35mm — natural FOV on Super 35
+let currentLens = LENSES[2]; // Standard 35mm — natural FOV on Super 35
 let currentFov  = currentLens.startFov;
 let targetFov   = currentFov;
 
