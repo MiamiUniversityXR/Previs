@@ -324,7 +324,7 @@
     <div class="section-label">Scene Content</div>
 
     <div class="upload-slot">
-      <h3>Wall Texture</h3>
+      <h3>Wall Texture (4752*1584)</h3>
       <div class="drop-zone" id="dz-wall">
         <input type="file" id="file-wall" accept="image/*,video/*">
         <span class="dz-icon">&#9633;</span>
@@ -336,7 +336,7 @@
     <div class="upload-divider"></div>
 
     <div class="upload-slot">
-      <h3>Floor Texture</h3>
+      <h3>Floor Texture (1280*896)</h3>
       <div class="drop-zone" id="dz-floor">
         <input type="file" id="file-floor" accept="image/*,video/*">
         <span class="dz-icon">&#9633;</span>
@@ -943,7 +943,7 @@ function exportFrame() {
       const ts  = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       const a   = document.createElement('a');
       a.href     = url;
-      a.download = 'lens-studio-' + ts + '.png';
+      a.download = 'muxr-previs-' + ts + '.png';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1087,6 +1087,7 @@ function fetchOBJ(path, proxy, mat) {
 
 fetchOBJ('meshes/wall.obj',    wall,    wallMat);
 fetchOBJ('meshes/floor.obj',   floor,   floorMat);
+
 fetchOBJ('meshes/StageRoom.obj', room,  StageRoomMat); 
 fetchOBJ('meshes/standin.obj', standin, standinMat).then(() => applyStandinScale());
 
