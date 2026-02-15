@@ -329,7 +329,7 @@
     <div class="ctrl-hint"><kbd>DRAG</kbd> Look</div>
     <div class="ctrl-hint"><kbd>SHIFT</kbd> Sprint</div>
     <div class="ctrl-hint"><kbd>SCROLL</kbd> Zoom</div>
-    <button id="btn-export">&#9678;&nbsp; Export 16:9</button>
+    <button id="btn-export">&#9678;&nbsp; Export Image</button>
   </div>
 </div>
 
@@ -419,16 +419,12 @@ function fovToFFMm(fov) {
 // Focal lengths are the ACTUAL lens focal lengths (not FF equiv)
 // ================================================================
 const LENSES = [
-  { name: 'Fisheye 8mm',     startFov: focalToFov(8),   endFov: focalToFov(8),   zoom: false },
-  { name: 'Ultra Wide 14mm', startFov: focalToFov(14),  endFov: focalToFov(14),  zoom: false },
-  { name: 'Wide 24mm',       startFov: focalToFov(24),  endFov: focalToFov(24),  zoom: false },
-  { name: 'Standard 35mm',   startFov: focalToFov(35),  endFov: focalToFov(35),  zoom: false },
-  { name: 'Portrait 50mm',   startFov: focalToFov(50),  endFov: focalToFov(50),  zoom: false },
-  { name: 'Short Tele 85mm', startFov: focalToFov(85),  endFov: focalToFov(85),  zoom: false },
-  { name: 'Tele 135mm',      startFov: focalToFov(135), endFov: focalToFov(135), zoom: false },
-  { name: '24-70mm Zoom',    startFov: focalToFov(24),  endFov: focalToFov(70),  zoom: true  },
-  { name: '70-200mm Zoom',   startFov: focalToFov(70),  endFov: focalToFov(200), zoom: true  },
-  { name: '18-55mm Kit',     startFov: focalToFov(18),  endFov: focalToFov(55),  zoom: true  },
+  { name: '50-100mm T2 Sigma Cine-zoom', startFov: focalToFov(50),   endFov: focalToFov(100),   zoom: true },
+  { name: '15mm T2.1 Zeiss CP.3', startFov: focalToFov(15),  endFov: focalToFov(15),  zoom: false },
+  { name: '25mm T2.1 Zeiss CP.3', startFov: focalToFov(25),  endFov: focalToFov(25),  zoom: false },
+  { name: '35mm T2.1 Zeiss CP.3',   startFov: focalToFov(35),  endFov: focalToFov(35),  zoom: false },
+  { name: '50mm T2.1 Zeiss CP.3',   startFov: focalToFov(50),  endFov: focalToFov(50),  zoom: false },
+  { name: '85mm T2.1 Zeiss Cp.3', startFov: focalToFov(85),  endFov: focalToFov(85),  zoom: false },
 ];
 const NUM_BUILTIN = LENSES.length;
 
@@ -447,7 +443,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0e0e0e);
 scene.fog = new THREE.Fog(0x0e0e0e, 20, 60);
 
-const camera = new THREE.PerspectiveCamera(focalToFov(35), window.innerWidth / window.innerHeight, 0.05, 200);
+const camera = new THREE.PerspectiveCamera(focalToFov(25), window.innerWidth / window.innerHeight, 0.05, 200);
 camera.position.set(0, 1.7, 5);
 
 // Lighting
