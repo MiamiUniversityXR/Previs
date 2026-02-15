@@ -715,7 +715,8 @@ function updateFovReadout(fov) {
   fovReadout.innerHTML = actual + 'mm<span>actual &nbsp;|&nbsp; ' + ffEquiv + 'mm FF equiv</span>';
 }
 
-function selectLens(lens, index) {
+function selectLens(index) {
+  lens = LENSES[index];
   currentLens = lens;
   targetFov   = lens.startFov;
   fovSlider.value = 0;
@@ -770,14 +771,14 @@ function rebuildLensList() {
 
     el.addEventListener('click', function(e) {
       if (e.target.classList.contains('lens-delete')) return;
-      selectLens(LENSES[parseInt(el.dataset.index)], parseInt(el.dataset.index));
+      selectLens(parseInt(el.dataset.index));
     });
 
     if (isCustom) {
       el.querySelector('.lens-delete').addEventListener('click', function(e) {
         e.stopPropagation();
         const idx = parseInt(el.dataset.index);
-        if (currentLens === LENSES[idx]) selectLens(LENSES[0], 0);
+        if (currentLens === LENSES[idx]) selectLens(0);
         LENSES.splice(idx, 1);
         rebuildLensList();
       });
@@ -788,7 +789,7 @@ function rebuildLensList() {
 }
 
 rebuildLensList();
-selectLens(LENSES[2], 3);
+selectLens(2);
 
 // ================================================================
 // CUSTOM LENS MODAL
@@ -842,7 +843,7 @@ document.getElementById('btn-modal-save').addEventListener('click', () => {
   rebuildLensList();
   closeModal();
   const newIdx = LENSES.length - 1;
-  setTimeout(() => selectLens(lens, newIdx), 40);
+  setTimeout(() => selectLens(newIdx), 40);
 });
 
 document.addEventListener('keydown', e => {
