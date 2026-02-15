@@ -508,15 +508,15 @@ camera.position.set(0, 1.7, 10);
 // Lighting
 scene.add(new THREE.AmbientLight(0xfff0e0, 0.4));
 const spot = new THREE.SpotLight(0xfff5e8, 1.6, 40, Math.PI/6, 0.5);
-spot.position.set(0, 10, 0);
+spot.position.set(0, 10, 2.5);
 spot.castShadow = true;
 spot.shadow.mapSize.set(2048, 2048);
 scene.add(spot);
 const fl = new THREE.PointLight(0x4466cc, 0.3, 20);
-fl.position.set(-8, 4, 2);
+fl.position.set(-4, 4, 8);
 scene.add(fl);
 const fr = new THREE.PointLight(0xcc6644, 0.2, 20);
-fr.position.set(8, 4, -2);
+fr.position.set(0, 4, 9);
 scene.add(fr);
 
 // ================================================================
@@ -1087,7 +1087,7 @@ function fetchOBJ(path, proxy, mat) {
 
 fetchOBJ('meshes/wall.obj',    wall,    wallMat);
 fetchOBJ('meshes/floor.obj',   floor,   floorMat);
-fetchOBJ('meshes/StageRoom.obj', floor,  StageRoomMat); 
+fetchOBJ('meshes/StageRoom.obj', room,  StageRoomMat); 
 fetchOBJ('meshes/standin.obj', standin, standinMat).then(() => applyStandinScale());
 
 // Stand-in file picker — lets user swap the mesh at any time
