@@ -525,6 +525,14 @@ scene.add(fr);
 
 const wallMat    = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
 const floorMat   = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+const StageRoomMat = new THREE.MeshStandardMaterial({
+  color:     0xff0000,
+  roughness: 0.8,
+  metalness: 0.2,
+  transparent: true,
+  opacity: 0.5,
+});
+
 const standinMat = new THREE.MeshStandardMaterial({
   color:     0xcccccc,
   roughness: 0.6,
@@ -534,6 +542,7 @@ const standinMat = new THREE.MeshStandardMaterial({
 // Proxy objects so texture code can always reference .material
 const wall    = { material: wallMat,    meshes: [] };
 const floor   = { material: floorMat,   meshes: [] };
+const room   = { material: StageRoomMat, meshes: [] };
 const standin = { material: standinMat, meshes: [] };
 
 function loadOBJFromText(text, proxy, sharedMat) {
@@ -1078,6 +1087,7 @@ function fetchOBJ(path, proxy, mat) {
 
 fetchOBJ('meshes/wall.obj',    wall,    wallMat);
 fetchOBJ('meshes/floor.obj',   floor,   floorMat);
+fetchOBJ('meshes/StageRoom.obj', floor,  StageRoomMat); 
 fetchOBJ('meshes/standin.obj', standin, standinMat).then(() => applyStandinScale());
 
 // Stand-in file picker — lets user swap the mesh at any time
