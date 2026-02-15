@@ -178,6 +178,24 @@
   .drop-zone .dz-filename { font-size: 9px; color: var(--accent); margin-top: 6px; word-break: break-all; display: none; }
   .upload-divider { height: 1px; background: rgba(240,236,228,0.08); margin: 0 20px 24px; }
 
+  .scale-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 10px; padding: 0 2px;
+  }
+  .scale-row label {
+    font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase;
+  }
+  .scale-row input[type=number] {
+    width: 80px;
+    background: rgba(240,236,228,0.04);
+    border: 1px solid rgba(240,236,228,0.14);
+    color: var(--paper); font-family: 'Space Mono', monospace; font-size: 12px;
+    padding: 6px 8px; outline: none; text-align: right;
+    -moz-appearance: textfield; transition: border-color 0.15s;
+  }
+  .scale-row input[type=number]:focus { border-color: var(--accent); }
+  .scale-row input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
   /* BOTTOM BAR */
   #bottom-bar {
     position: absolute; bottom:0;
@@ -321,6 +339,22 @@
         <div class="dz-filename" id="fn-floor"></div>
       </div>
     </div>
+
+    <div class="upload-divider"></div>
+
+    <div class="upload-slot">
+      <h3>Stand-In Mesh</h3>
+      <div class="drop-zone" id="dz-standin">
+        <input type="file" id="file-standin" accept=".obj">
+        <span class="dz-icon">&#9635;</span>
+        <p>meshes/standin.obj</p>
+        <div class="dz-filename" id="fn-standin"></div>
+      </div>
+      <div class="scale-row">
+        <label for="standin-scale">Scale</label>
+        <input type="number" id="standin-scale" value="1" min="0.001" step="0.01">
+      </div>
+    </div>
   </div>
 
   <!-- Bottom Bar -->
@@ -329,7 +363,7 @@
     <div class="ctrl-hint"><kbd>DRAG</kbd> Look</div>
     <div class="ctrl-hint"><kbd>SHIFT</kbd> Sprint</div>
     <div class="ctrl-hint"><kbd>SCROLL</kbd> Zoom</div>
-    <button id="btn-export">&#9678;&nbsp; Export Image</button>
+    <button id="btn-export">&#9678;&nbsp; Export 16:9</button>
   </div>
 </div>
 
@@ -419,12 +453,16 @@ function fovToFFMm(fov) {
 // Focal lengths are the ACTUAL lens focal lengths (not FF equiv)
 // ================================================================
 const LENSES = [
-  { name: '50-100mm T2 Sigma Cine-zoom', startFov: focalToFov(50),   endFov: focalToFov(100),   zoom: true },
-  { name: '15mm T2.1 Zeiss CP.3', startFov: focalToFov(15),  endFov: focalToFov(15),  zoom: false },
-  { name: '25mm T2.1 Zeiss CP.3', startFov: focalToFov(25),  endFov: focalToFov(25),  zoom: false },
-  { name: '35mm T2.1 Zeiss CP.3',   startFov: focalToFov(35),  endFov: focalToFov(35),  zoom: false },
-  { name: '50mm T2.1 Zeiss CP.3',   startFov: focalToFov(50),  endFov: focalToFov(50),  zoom: false },
-  { name: '85mm T2.1 Zeiss Cp.3', startFov: focalToFov(85),  endFov: focalToFov(85),  zoom: false },
+  { name: 'Fisheye 8mm',     startFov: focalToFov(8),   endFov: focalToFov(8),   zoom: false },
+  { name: 'Ultra Wide 14mm', startFov: focalToFov(14),  endFov: focalToFov(14),  zoom: false },
+  { name: 'Wide 24mm',       startFov: focalToFov(24),  endFov: focalToFov(24),  zoom: false },
+  { name: 'Standard 35mm',   startFov: focalToFov(35),  endFov: focalToFov(35),  zoom: false },
+  { name: 'Portrait 50mm',   startFov: focalToFov(50),  endFov: focalToFov(50),  zoom: false },
+  { name: 'Short Tele 85mm', startFov: focalToFov(85),  endFov: focalToFov(85),  zoom: false },
+  { name: 'Tele 135mm',      startFov: focalToFov(135), endFov: focalToFov(135), zoom: false },
+  { name: '24-70mm Zoom',    startFov: focalToFov(24),  endFov: focalToFov(70),  zoom: true  },
+  { name: '70-200mm Zoom',   startFov: focalToFov(70),  endFov: focalToFov(200), zoom: true  },
+  { name: '18-55mm Kit',     startFov: focalToFov(18),  endFov: focalToFov(55),  zoom: true  },
 ];
 const NUM_BUILTIN = LENSES.length;
 
@@ -443,8 +481,8 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0e0e0e);
 scene.fog = new THREE.Fog(0x0e0e0e, 20, 60);
 
-const camera = new THREE.PerspectiveCamera(focalToFov(25), window.innerWidth / window.innerHeight, 0.05, 200);
-camera.position.set(0, 1.7, 10);
+const camera = new THREE.PerspectiveCamera(focalToFov(35), window.innerWidth / window.innerHeight, 0.05, 200);
+camera.position.set(0, 1.7, 5);
 
 // Lighting
 scene.add(new THREE.AmbientLight(0xfff0e0, 0.4));
@@ -464,12 +502,18 @@ scene.add(fr);
 // OBJ MESH LOADER
 // ================================================================
 
-const wallMat  = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
-const floorMat = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+const wallMat    = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
+const floorMat   = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+const standinMat = new THREE.MeshStandardMaterial({
+  color:     0xcccccc,
+  roughness: 0.6,
+  metalness: 0.1,
+});
 
 // Proxy objects so texture code can always reference .material
-const wall  = { material: wallMat,  meshes: [] };
-const floor = { material: floorMat, meshes: [] };
+const wall    = { material: wallMat,    meshes: [] };
+const floor   = { material: floorMat,   meshes: [] };
+const standin = { material: standinMat, meshes: [] };
 
 function loadOBJFromText(text, proxy, sharedMat) {
   const positions = [], uvs = [], normals = [];
@@ -635,7 +679,7 @@ function updateCamera(dt) {
 // ================================================================
 // FOV / LENS SYSTEM
 // ================================================================
-let currentLens = LENSES[2]; // Standard 35mm — natural FOV on Super 35
+let currentLens = LENSES[3]; // Standard 35mm — natural FOV on Super 35
 let currentFov  = currentLens.startFov;
 let targetFov   = currentFov;
 
@@ -1004,14 +1048,41 @@ setupDropZone('dz-floor', 'file-floor', 'fn-floor', floor, 'floor');
 // LOAD MESHES — fetch from meshes/ folder (works on GitHub Pages / any https host)
 // ================================================================
 function fetchOBJ(path, proxy, mat) {
-  fetch(path)
+  return fetch(path)
     .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
     .then(text => loadOBJFromText(text, proxy, mat))
     .catch(err => console.error('Could not load ' + path + ':', err));
 }
 
-fetchOBJ('meshes/wall.obj',  wall,  wallMat);
-fetchOBJ('meshes/floor.obj', floor, floorMat);
+fetchOBJ('meshes/wall.obj',    wall,    wallMat);
+fetchOBJ('meshes/floor.obj',   floor,   floorMat);
+fetchOBJ('meshes/standin.obj', standin, standinMat).then(() => applyStandinScale());
+
+// Stand-in file picker — lets user swap the mesh at any time
+const standinInput = document.getElementById('file-standin');
+const standinFn    = document.getElementById('fn-standin');
+const standinScaleInput = document.getElementById('standin-scale');
+
+function applyStandinScale() {
+  const s = parseFloat(standinScaleInput.value);
+  if (isNaN(s) || s <= 0) return;
+  for (const m of standin.meshes) m.scale.setScalar(s);
+}
+
+standinInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  standinFn.textContent = file.name;
+  standinFn.style.display = 'block';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    loadOBJFromText(ev.target.result, standin, standinMat);
+    applyStandinScale();
+  };
+  reader.readAsText(file);
+});
+
+standinScaleInput.addEventListener('input', applyStandinScale);
 
 // ================================================================
 // RENDER LOOP
