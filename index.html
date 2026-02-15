@@ -180,7 +180,8 @@
 
   .scale-row {
     display: flex; align-items: center; justify-content: space-between;
-    margin-top: 10px; padding: 0 2px;
+    margin-top: 10px; 
+    padding: 0 2px 10px 2px;
   }
   .scale-row label {
     font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase;
@@ -401,12 +402,12 @@
 
     <div class="field-row">
       <div class="field-group">
-        <label>Start FOV (&deg;)</label>
-        <input type="number" id="cl-fov-start" placeholder="73" min="1" max="179">
+        <label>Start focal length</label>
+        <input type="number" id="cl-fov-start" placeholder="25" min="1" max="179">
       </div>
       <div class="field-group" id="end-fov-group">
-        <label>End FOV (&deg;)</label>
-        <input type="number" id="cl-fov-end" placeholder="34" min="1" max="179">
+        <label>End focal length</label>
+        <input type="number" id="cl-fov-end" placeholder="100" min="1" max="179">
       </div>
     </div>
 
@@ -782,7 +783,7 @@ function rebuildLensList() {
 }
 
 rebuildLensList();
-selectLens(LENSES[3], 3);
+selectLens(LENSES[2], 3);
 
 // ================================================================
 // CUSTOM LENS MODAL
@@ -827,11 +828,11 @@ document.getElementById('btn-modal-save').addEventListener('click', () => {
   const efov = isZ ? parseFloat(clFovEnd.value) : sfov;
 
   if (!name)                                    { modalError.textContent = 'A lens name is required.'; return; }
-  if (isNaN(sfov) || sfov < 1 || sfov > 179)   { modalError.textContent = 'Start FOV must be between 1\u2013179\u00b0.'; return; }
-  if (isZ && (isNaN(efov)||efov<1||efov>179))   { modalError.textContent = 'End FOV must be between 1\u2013179\u00b0.'; return; }
-  if (isZ && efov === sfov)                      { modalError.textContent = 'Start and end FOV must differ.'; return; }
+  //if (isNaN(sfov) || sfov < 1 || sfov > 179)   { modalError.textContent = 'Start FOV must be between 1\u2013179\u00b0.'; return; }
+  //if (isZ && (isNaN(efov)||efov<1||efov>179))   { modalError.textContent = 'End FOV must be between 1\u2013179\u00b0.'; return; }
+  if (isZ && efov === sfov)                      { modalError.textContent = 'Start and end Focal Length must differ.'; return; }
 
-  const lens = { name, startFov: sfov, endFov: efov, zoom: isZ };
+  const lens = { name, startFov: focalToFov(sfov), endFov: focalToFov(efov), zoom: isZ };
   LENSES.push(lens);
   rebuildLensList();
   closeModal();
