@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LENS STUDIO</title>
+<title>MUXR Previs</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&display=swap');
 
@@ -15,7 +15,7 @@
     --accent: #e8380d;
     --dim: #b0a898;
     --ui-bg: rgba(10,10,10,0.88);
-    --panel-w: 260px;
+    --panel-w: 285px;
   }
 
   html, body { width: 100%; height: 100%; overflow: hidden; background: var(--ink); }
@@ -29,7 +29,12 @@
   }
 
   /* BRAND */
-  #brand { position: absolute; top: 24px; left: 28px; pointer-events: none; }
+  #brand { 
+    position: absolute; 
+    top: 24px; 
+    left: 20px; 
+    pointer-events: none; 
+  }
   #brand h1 {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 42px; letter-spacing: 6px; color: var(--paper); line-height: 1;
@@ -178,6 +183,25 @@
   .drop-zone .dz-filename { font-size: 9px; color: var(--accent); margin-top: 6px; word-break: break-all; display: none; }
   .upload-divider { height: 1px; background: rgba(240,236,228,0.08); margin: 0 20px 24px; }
 
+  .scale-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 10px; 
+    padding: 0 2px 10px 2px;
+  }
+  .scale-row label {
+    font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase;
+  }
+  .scale-row input[type=number] {
+    width: 80px;
+    background: rgba(240,236,228,0.04);
+    border: 1px solid rgba(240,236,228,0.14);
+    color: var(--paper); font-family: 'Space Mono', monospace; font-size: 12px;
+    padding: 6px 8px; outline: none; text-align: right;
+    -moz-appearance: textfield; transition: border-color 0.15s;
+  }
+  .scale-row input[type=number]:focus { border-color: var(--accent); }
+  .scale-row input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
   /* BOTTOM BAR */
   #bottom-bar {
     position: absolute; bottom:0;
@@ -280,12 +304,11 @@
 <body>
 
 <div id="hud">
-  <div id="brand"><h1>LENS STUDIO</h1><p>RED KOMODO &mdash; Super 35 / APS-C</p></div>
-  <div id="crosshair"></div>
 
-
-  <!-- Left Panel -->
+  <!-- Left Panel <div id="crosshair"></div> --> 
   <div id="panel-left">
+    <div id="brand"><h1>MUXR Previs</h1><p>RED KOMODO &mdash; Super 35 / APS-C</p></div>
+    
     <div class="section-label">Lens Selection</div>
     <div id="lens-list"></div>
     <button id="btn-add-lens">&#43;&nbsp;&nbsp;Custom Lens</button>
@@ -321,6 +344,42 @@
         <div class="dz-filename" id="fn-floor"></div>
       </div>
     </div>
+
+    <div class="upload-divider"></div>
+
+    <div class="upload-slot">
+      <h3>Stand-In Mesh</h3>
+      <div class="drop-zone" id="dz-standin">
+        <input type="file" id="file-standin" accept=".obj">
+        <span class="dz-icon">&#9635;</span>
+        <p>meshes/standin.obj</p>
+        <div class="dz-filename" id="fn-standin"></div>
+      </div>
+      <div class="scale-row">
+        <label for="standin-scale">Scale</label>
+        <input type="number" id="standin-scale" value=".01" min="0.001" step="0.01">
+      </div>
+      <div class="transform-grid">
+        <div class="field-row">
+          <div class="field-group">
+            <label>Position (m)</label>
+            <div class="inline-fields">
+              <input type="number" id="standin-pos-x" value="0" step="0.01" title="X">
+              <input type="number" id="standin-pos-y" value="0" step="0.01" title="Y">
+              <input type="number" id="standin-pos-z" value="2.5" step="0.01" title="Z">
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Rotation (&deg;)</label>
+            <div class="inline-fields">
+              <input type="number" id="standin-rot-x" value="0" step="1" title="RX">
+              <input type="number" id="standin-rot-y" value="0" step="1" title="RY">
+              <input type="number" id="standin-rot-z" value="0" step="1" title="RZ">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Bottom Bar -->
@@ -348,12 +407,12 @@
 
     <div class="field-row">
       <div class="field-group">
-        <label>Start FOV (&deg;)</label>
-        <input type="number" id="cl-fov-start" placeholder="73" min="1" max="179">
+        <label>Start focal length</label>
+        <input type="number" id="cl-fov-start" placeholder="25" min="1" max="179">
       </div>
       <div class="field-group" id="end-fov-group">
-        <label>End FOV (&deg;)</label>
-        <input type="number" id="cl-fov-end" placeholder="34" min="1" max="179">
+        <label>End focal length</label>
+        <input type="number" id="cl-fov-end" placeholder="100" min="1" max="179">
       </div>
     </div>
 
@@ -419,16 +478,12 @@ function fovToFFMm(fov) {
 // Focal lengths are the ACTUAL lens focal lengths (not FF equiv)
 // ================================================================
 const LENSES = [
-  { name: 'Fisheye 8mm',     startFov: focalToFov(8),   endFov: focalToFov(8),   zoom: false },
-  { name: 'Ultra Wide 14mm', startFov: focalToFov(14),  endFov: focalToFov(14),  zoom: false },
-  { name: 'Wide 24mm',       startFov: focalToFov(24),  endFov: focalToFov(24),  zoom: false },
-  { name: 'Standard 35mm',   startFov: focalToFov(35),  endFov: focalToFov(35),  zoom: false },
-  { name: 'Portrait 50mm',   startFov: focalToFov(50),  endFov: focalToFov(50),  zoom: false },
-  { name: 'Short Tele 85mm', startFov: focalToFov(85),  endFov: focalToFov(85),  zoom: false },
-  { name: 'Tele 135mm',      startFov: focalToFov(135), endFov: focalToFov(135), zoom: false },
-  { name: '24-70mm Zoom',    startFov: focalToFov(24),  endFov: focalToFov(70),  zoom: true  },
-  { name: '70-200mm Zoom',   startFov: focalToFov(70),  endFov: focalToFov(200), zoom: true  },
-  { name: '18-55mm Kit',     startFov: focalToFov(18),  endFov: focalToFov(55),  zoom: true  },
+  { name: '50-100mm T2 Sigma Cine-zoom', startFov: focalToFov(50),   endFov: focalToFov(100),   zoom: true },
+  { name: '15mm T2.1 Zeiss CP.3', startFov: focalToFov(15),  endFov: focalToFov(15),  zoom: false },
+  { name: '25mm T2.1 Zeiss CP.3', startFov: focalToFov(25),  endFov: focalToFov(25),  zoom: false },
+  { name: '35mm T2.1 Zeiss CP.3',   startFov: focalToFov(35),  endFov: focalToFov(35),  zoom: false },
+  { name: '50mm T2.1 Zeiss CP.3',   startFov: focalToFov(50),  endFov: focalToFov(50),  zoom: false },
+  { name: '85mm T2.1 Zeiss Cp.3', startFov: focalToFov(85),  endFov: focalToFov(85),  zoom: false },
 ];
 const NUM_BUILTIN = LENSES.length;
 
@@ -448,7 +503,7 @@ scene.background = new THREE.Color(0x0e0e0e);
 scene.fog = new THREE.Fog(0x0e0e0e, 20, 60);
 
 const camera = new THREE.PerspectiveCamera(focalToFov(35), window.innerWidth / window.innerHeight, 0.05, 200);
-camera.position.set(0, 1.7, 5);
+camera.position.set(0, 1.7, 10);
 
 // Lighting
 scene.add(new THREE.AmbientLight(0xfff0e0, 0.4));
@@ -468,12 +523,18 @@ scene.add(fr);
 // OBJ MESH LOADER
 // ================================================================
 
-const wallMat  = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
-const floorMat = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+const wallMat    = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
+const floorMat   = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+const standinMat = new THREE.MeshStandardMaterial({
+  color:     0xcccccc,
+  roughness: 0.6,
+  metalness: 0.1,
+});
 
 // Proxy objects so texture code can always reference .material
-const wall  = { material: wallMat,  meshes: [] };
-const floor = { material: floorMat, meshes: [] };
+const wall    = { material: wallMat,    meshes: [] };
+const floor   = { material: floorMat,   meshes: [] };
+const standin = { material: standinMat, meshes: [] };
 
 function loadOBJFromText(text, proxy, sharedMat) {
   const positions = [], uvs = [], normals = [];
@@ -639,7 +700,7 @@ function updateCamera(dt) {
 // ================================================================
 // FOV / LENS SYSTEM
 // ================================================================
-let currentLens = LENSES[3]; // Standard 35mm — natural FOV on Super 35
+let currentLens = LENSES[2]; // Standard 35mm — natural FOV on Super 35
 let currentFov  = currentLens.startFov;
 let targetFov   = currentFov;
 
@@ -727,7 +788,7 @@ function rebuildLensList() {
 }
 
 rebuildLensList();
-selectLens(LENSES[3], 3);
+selectLens(LENSES[2], 3);
 
 // ================================================================
 // CUSTOM LENS MODAL
@@ -772,11 +833,11 @@ document.getElementById('btn-modal-save').addEventListener('click', () => {
   const efov = isZ ? parseFloat(clFovEnd.value) : sfov;
 
   if (!name)                                    { modalError.textContent = 'A lens name is required.'; return; }
-  if (isNaN(sfov) || sfov < 1 || sfov > 179)   { modalError.textContent = 'Start FOV must be between 1\u2013179\u00b0.'; return; }
-  if (isZ && (isNaN(efov)||efov<1||efov>179))   { modalError.textContent = 'End FOV must be between 1\u2013179\u00b0.'; return; }
-  if (isZ && efov === sfov)                      { modalError.textContent = 'Start and end FOV must differ.'; return; }
+  //if (isNaN(sfov) || sfov < 1 || sfov > 179)   { modalError.textContent = 'Start FOV must be between 1\u2013179\u00b0.'; return; }
+  //if (isZ && (isNaN(efov)||efov<1||efov>179))   { modalError.textContent = 'End FOV must be between 1\u2013179\u00b0.'; return; }
+  if (isZ && efov === sfov)                      { modalError.textContent = 'Start and end Focal Length must differ.'; return; }
 
-  const lens = { name, startFov: sfov, endFov: efov, zoom: isZ };
+  const lens = { name, startFov: focalToFov(sfov), endFov: focalToFov(efov), zoom: isZ };
   LENSES.push(lens);
   rebuildLensList();
   closeModal();
@@ -1008,14 +1069,70 @@ setupDropZone('dz-floor', 'file-floor', 'fn-floor', floor, 'floor');
 // LOAD MESHES — fetch from meshes/ folder (works on GitHub Pages / any https host)
 // ================================================================
 function fetchOBJ(path, proxy, mat) {
-  fetch(path)
+  return fetch(path)
     .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
     .then(text => loadOBJFromText(text, proxy, mat))
     .catch(err => console.error('Could not load ' + path + ':', err));
 }
 
-fetchOBJ('meshes/wall.obj',  wall,  wallMat);
-fetchOBJ('meshes/floor.obj', floor, floorMat);
+fetchOBJ('meshes/wall.obj',    wall,    wallMat);
+fetchOBJ('meshes/floor.obj',   floor,   floorMat);
+fetchOBJ('meshes/standin.obj', standin, standinMat).then(() => applyStandinScale());
+
+// Stand-in file picker — lets user swap the mesh at any time
+const standinInput = document.getElementById('file-standin');
+const standinFn    = document.getElementById('fn-standin');
+const standinScaleInput = document.getElementById('standin-scale');
+const standinPosXInput = document.getElementById('standin-pos-x');
+const standinPosYInput = document.getElementById('standin-pos-y');
+const standinPosZInput = document.getElementById('standin-pos-z');
+const standinRotXInput = document.getElementById('standin-rot-x');
+const standinRotYInput = document.getElementById('standin-rot-y');
+const standinRotZInput = document.getElementById('standin-rot-z');
+
+function applyStandinScale() {
+  const s = parseFloat(standinScaleInput.value);
+  if (isNaN(s) || s <= 0) return;
+  for (const m of standin.meshes) m.scale.setScalar(s);
+  // Also apply any position/rotation edits after scaling
+  applyStandinTransform();
+}
+
+standinInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  standinFn.textContent = file.name;
+  standinFn.style.display = 'block';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    loadOBJFromText(ev.target.result, standin, standinMat);
+    applyStandinScale();
+  };
+  reader.readAsText(file);
+});
+
+standinScaleInput.addEventListener('input', applyStandinScale);
+// Apply position/rotation from inputs to all standin meshes
+function applyStandinTransform() {
+  const px = parseFloat(standinPosXInput.value);
+  const py = parseFloat(standinPosYInput.value);
+  const pz = parseFloat(standinPosZInput.value);
+  const rx = parseFloat(standinRotXInput.value) * Math.PI / 180;
+  const ry = parseFloat(standinRotYInput.value) * Math.PI / 180;
+  const rz = parseFloat(standinRotZInput.value) * Math.PI / 180;
+
+  for (const m of standin.meshes) {
+    if (!isNaN(px) && !isNaN(py) && !isNaN(pz)) m.position.set(px, py, pz);
+    if (!isNaN(rx) && !isNaN(ry) && !isNaN(rz)) m.rotation.set(rx, ry, rz);
+  }
+}
+
+standinPosXInput.addEventListener('input', applyStandinTransform);
+standinPosYInput.addEventListener('input', applyStandinTransform);
+standinPosZInput.addEventListener('input', applyStandinTransform);
+standinRotXInput.addEventListener('input', applyStandinTransform);
+standinRotYInput.addEventListener('input', applyStandinTransform);
+standinRotZInput.addEventListener('input', applyStandinTransform);
 
 // ================================================================
 // RENDER LOOP
