@@ -658,17 +658,163 @@ function updateCamera(dt) {
   const speed = (keys['ShiftLeft']||keys['ShiftRight']) ? 8 : 2.5;
   const fwd   = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
   const right = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
+  
+  // Keyboard controls
   if (keys['KeyW']||keys['ArrowUp'])    camera.position.addScaledVector(fwd,    speed*dt);
   if (keys['KeyS']||keys['ArrowDown'])  camera.position.addScaledVector(fwd,   -speed*dt);
   if (keys['KeyA']||keys['ArrowLeft'])  camera.position.addScaledVector(right, -speed*dt);
   if (keys['KeyD']||keys['ArrowRight']) camera.position.addScaledVector(right,  speed*dt);
   if (keys['KeyQ']) camera.position.y += speed*dt*0.5;
   if (keys['KeyE']) camera.position.y -= speed*dt*0.5;
+  
+  // Mobile joystick controls
+  if (typeof getJoystickInput !== 'undefined') {
+    const joy = getJoystickInput();
+    if (joy.x !== 0 || joy.y !== 0) {
+      camera.position.addScaledVector(right, joy.x * speed * dt);
+      camera.position.addScaledVector(fwd, -joy.y * speed * dt);
+    }
+  }
+  
   camera.position.y = Math.max(0.2, camera.position.y);
   const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), yaw);
   const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), pitch);
   camera.quaternion.copy(qY).multiply(qX);
 }
+
+// ================================================================
+// MOBILE TOUCH CONTROLS
+// ================================================================
+(function() {
+  let joystickActive = false;
+  let joystickOrigin = { x: 0, y: 0 };
+  let joystickCurrent = { x: 0, y: 0 };
+  let joystickTouchId = null;
+  
+  // Create joystick UI
+  const joystickOuter = document.createElement('div');
+  joystickOuter.id = 'joystick-outer';
+  joystickOuter.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    left: 30px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(240, 236, 228, 0.08);
+    border: 2px solid rgba(240, 236, 228, 0.15);
+    display: none;
+    pointer-events: none;
+    z-index: 30;
+  `;
+  
+  const joystickInner = document.createElement('div');
+  joystickInner.id = 'joystick-inner';
+  joystickInner.style.cssText = `
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(232, 56, 13, 0.6);
+    border: 2px solid rgba(232, 56, 13, 0.9);
+    transform: translate(-50%, -50%);
+    transition: background 0.15s;
+  `;
+  
+  joystickOuter.appendChild(joystickInner);
+  document.body.appendChild(joystickOuter);
+  
+  // Show joystick on mobile/tablet
+  function updateJoystickVisibility() {
+    const isMobile = window.innerWidth <= 1024;
+    joystickOuter.style.display = isMobile ? 'block' : 'none';
+  }
+  updateJoystickVisibility();
+  window.addEventListener('resize', updateJoystickVisibility);
+  
+  // Touch handlers for joystick
+  renderer.domElement.addEventListener('touchstart', e => {
+  const touch = e.touches[0];
+  // Only activate look controls on right half of screen
+  if (touch.clientX >= window.innerWidth / 2) {
+    dragging = true;
+    lastX = touch.clientX;
+    lastY = touch.clientY;
+  }
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (!dragging) return;
+  // Find the touch that started the drag
+  for (let i = 0; i < e.touches.length; i++) {
+    const touch = e.touches[i];
+    if (touch.clientX >= window.innerWidth / 2) {
+      yaw -= (touch.clientX - lastX) * 0.003;
+      pitch -= (touch.clientY - lastY) * 0.003;
+      pitch = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, pitch));
+      lastX = touch.clientX;
+      lastY = touch.clientY;
+      break;
+    }
+  }
+}, { passive: true });
+  
+  document.addEventListener('touchmove', (e) => {
+    if (!joystickActive) return;
+    
+    for (let i = 0; i < e.touches.length; i++) {
+      if (e.touches[i].identifier === joystickTouchId) {
+        const touch = e.touches[i];
+        joystickCurrent.x = touch.clientX;
+        joystickCurrent.y = touch.clientY;
+        
+        // Calculate offset from origin
+        const dx = joystickCurrent.x - joystickOrigin.x;
+        const dy = joystickCurrent.y - joystickOrigin.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const maxDistance = 60;
+        
+        // Clamp to max distance
+        const clampedDistance = Math.min(distance, maxDistance);
+        const angle = Math.atan2(dy, dx);
+        
+        const offsetX = Math.cos(angle) * clampedDistance;
+        const offsetY = Math.sin(angle) * clampedDistance;
+        
+        joystickInner.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
+        break;
+      }
+    }
+  }, { passive: true });
+  
+  document.addEventListener('touchend', (e) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === joystickTouchId) {
+        joystickActive = false;
+        joystickTouchId = null;
+        joystickInner.style.transform = 'translate(-50%, -50%)';
+        joystickInner.style.background = 'rgba(232, 56, 13, 0.6)';
+        break;
+      }
+    }
+  }, { passive: true });
+  
+  // Update camera based on joystick
+  window.getJoystickInput = function() {
+    if (!joystickActive) return { x: 0, y: 0 };
+    
+    const dx = joystickCurrent.x - joystickOrigin.x;
+    const dy = joystickCurrent.y - joystickOrigin.y;
+    const maxDistance = 60;
+    
+    return {
+      x: Math.max(-1, Math.min(1, dx / maxDistance)),
+      y: Math.max(-1, Math.min(1, dy / maxDistance))
+    };
+  };
+})();
 
 // ================================================================
 // FOV / LENS SYSTEM
