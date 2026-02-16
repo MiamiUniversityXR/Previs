@@ -495,9 +495,9 @@ function makeGridTexture(W, H, cellPx) {
   ctx.fillRect(0, 0, W, H);
 
   // Snap anchor to the grid line nearest the texture center
-  const anchorX = Math.round((W / 2) / cellPx) * cellPx;
-  const anchorY = Math.round((H / 2) / cellPx) * cellPx;
-
+  const anchorX = W / 2;
+  const anchorY = H / 2;
+  console.log(anchorX, anchorY);
   // Build all line positions radiating outward from the anchor
   function getLines(anchor, size, step) {
     const lines = [];
