@@ -483,52 +483,64 @@ const frLight = new THREE.PointLight(0xcc6644, 0.2, 20); frLight.position.set(0,
 // OBJ LOADER
 // ================================================================
 // ================================================================
-// DEFAULT GRID TEXTURES — 352px per metre, centered
+// DEFAULT GRID TEXTURES — 352px per metre, anchored to nearest
+// grid line from center so alignment is exact
 // ================================================================
 function makeGridTexture(W, H, cellPx) {
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
 
-  // Dark background
   ctx.fillStyle = '#111111';
   ctx.fillRect(0, 0, W, H);
 
-  // Centre the grid: offset by half the fractional remainder
-  const offX = ((W % cellPx) / 2);
-  const offY = ((H % cellPx) / 2);
+  // Snap anchor to the grid line nearest the texture center
+  const anchorX = Math.round((W / 2) / cellPx) * cellPx;
+  const anchorY = Math.round((H / 2) / cellPx) * cellPx;
 
-  // Minor grid lines — every 1m
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-  ctx.lineWidth = 1;
-  for (let x = offX; x <= W; x += cellPx) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-  }
-  for (let y = offY; y <= H; y += cellPx) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  // Build all line positions radiating outward from the anchor
+  function getLines(anchor, size, step) {
+    const lines = [];
+    for (let p = anchor; p <= size + step; p += step) lines.push(p);
+    for (let p = anchor - step; p >= -step; p -= step) lines.push(p);
+    return lines.filter(p => p >= 0 && p <= size);
   }
 
-  // Major lines — every 5m
-  ctx.strokeStyle = 'rgba(255,255,255,0.32)';
+  const minorX = getLines(anchorX, W, cellPx);
+  const minorY = getLines(anchorY, H, cellPx);
+  const majorX = getLines(anchorX, W, cellPx * 5);
+  const majorY = getLines(anchorY, H, cellPx * 5);
+
+  // Use sets for fast major-line lookup
+  const majSetX = new Set(majorX.map(x => Math.round(x)));
+  const majSetY = new Set(majorY.map(y => Math.round(y)));
+
+  // Minor lines — 1m, white
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
   ctx.lineWidth = 2;
-  // Find first 5-cell-aligned line from the offset
-  const step5 = cellPx * 5;
-  const offX5 = offX + ((step5 - (offX % step5)) % step5);
-  const offY5 = offY + ((step5 - (offY % step5)) % step5);
-  for (let x = offX5; x <= W; x += step5) {
+  for (const x of minorX) {
+    if (majSetX.has(Math.round(x))) continue;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
   }
-  // Also draw to the left of offX5
-  for (let x = offX5 - step5; x >= 0; x -= step5) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-  }
-  for (let y = offY5; y <= H; y += step5) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
-  for (let y = offY5 - step5; y >= 0; y -= step5) {
+  for (const y of minorY) {
+    if (majSetY.has(Math.round(y))) continue;
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
 
+  // Major lines — 5m, accent
+  ctx.strokeStyle = 'rgba(232,100,60,0.7)';
+  ctx.lineWidth = 4;
+  for (const x of majorX) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (const y of majorY) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  return cv; // return canvas so callers can composite onto it
+}
+
+function canvasToTex(cv) {
   const tex = new THREE.CanvasTexture(cv);
   tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
@@ -537,8 +549,36 @@ function makeGridTexture(W, H, cellPx) {
   return tex;
 }
 
-const wallGridTex  = makeGridTexture(4752, 1584, 352);
-const floorGridTex = makeGridTexture(2146, 1504, 352);
+// Floor texture — simple grid, sync
+const floorGridTex = canvasToTex(makeGridTexture(2146, 1504, 352));
+
+// Wall texture — grid + MUXR logo centered, async SVG load
+const wallGridCanvas = makeGridTexture(4752, 1584, 352);
+const wallGridTex    = canvasToTex(wallGridCanvas); // starts rendering immediately; logo composited after load
+
+(function () {
+  const SVG_W = 3998, SVG_H = 921.28;
+  const TW = 4752, TH = 1584;
+
+  // Scale logo to 72% of wall width, centred
+  const logoW = TW * 0.72;
+  const logoH = logoW * (SVG_H / SVG_W);
+  const logoX = (TW - logoW) / 2;
+  const logoY = (TH - logoH) / 2;
+
+  // Inline the SVG as a data URI — no fetch needed, no CORS
+  const svgSrc = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    `<svg width="${SVG_W}" height="${SVG_H}" viewBox="0 0 ${SVG_W} ${SVG_H}" xmlns="http://www.w3.org/2000/svg"><path d="M588.530029296875,0L771.0499877929688,624.35009765625L954.6199951171875,0L1564.4300537109375,0L1564.4300537109375,536.3798828125C1564.4300537109375,536.3798828125,1561.949951171875,689,1745.7099609375,689C1929.469970703125,689,1926.1600341796875,536.3798828125,1926.1600341796875,536.3798828125L1926.1600341796875,0L2306.919921875,0L2577.590087890625,378.39990234375L2849.919921875,0L3623.030029296875,0C3744.7099609375,0,3998,52.1500244140625,3998,299.22998046875C3998,546.31005859375,3742.22998046875,591.010009765625,3742.22998046875,591.010009765625L3987.239990234375,921.280029296875L3594.419921875,921.280029296875L3379.679931640625,601.889892578125L3248.070068359375,601.889892578125L3248.070068359375,921.280029296875L2849.929931640625,921.280029296875L2577.60009765625,545.840087890625L2306.929931640625,921.280029296875L1188.530029296875,921.280029296875L1188.530029296875,320.340087890625L981.3599853515625,921.280029296875L566.1900024414062,921.280029296875L356.05999755859375,320.340087890625L356.05999755859375,921.280029296875L0,921.280029296875L0,0L588.530029296875,0ZM3248.06005859375,375.239990234375L3556.889892578125,375.239990234375C3556.889892578125,375.239990234375,3633.300048828125,372.47998046875,3633.300048828125,299.89990234375C3633.300048828125,227.320068359375,3556.889892578125,223.489990234375,3556.889892578125,223.489990234375L3248.06005859375,223.489990234375L3248.06005859375,375.239990234375Z" fill="rgba(255,255,255,0.18)"/></svg>`
+  )}`;
+
+  const img = new Image();
+  img.onload = function () {
+    const ctx = wallGridCanvas.getContext('2d');
+    ctx.drawImage(img, logoX, logoY, logoW, logoH);
+    wallGridTex.needsUpdate = true;
+  };
+  img.src = svgSrc;
+}());
 
 const wallMat  = new THREE.MeshBasicMaterial({ map: wallGridTex,  color: 0xffffff });
 const floorMat = new THREE.MeshBasicMaterial({ map: floorGridTex, color: 0xffffff });
