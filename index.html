@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MUXR Previs</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -14,222 +14,169 @@
     --paper: #f0ece4;
     --accent: #e8380d;
     --dim: #b0a898;
-    --ui-bg: rgba(10,10,10,0.88);
+    --ui-bg: rgba(10,10,10,0.92);
     --panel-w: 285px;
+    --bottom-h: 48px;
+    --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   }
 
   html, body { width: 100%; height: 100%; overflow: hidden; background: var(--ink); }
   canvas { display: block; }
 
-  /* HUD */
   #hud {
     position: fixed; inset: 0; pointer-events: none;
-    font-family: 'Space Mono', monospace;
-    color: var(--paper); z-index: 10;
+    font-family: var(--font-mono); color: var(--paper); z-index: 10;
   }
-
-  /* BRAND */
-  #brand { 
-    position: absolute; 
-    top: 24px; 
-    left: 20px; 
-    pointer-events: none; 
-  }
-  #brand h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 42px; letter-spacing: 6px; color: var(--paper); line-height: 1;
-  }
-  #brand p { font-size: 9px; letter-spacing: 3px; color: var(--dim); text-transform: uppercase; margin-top: 2px; }
 
   /* CROSSHAIR */
   #crosshair {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%,-50%);
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
     width: 20px; height: 20px; pointer-events: none;
   }
-  #crosshair::before, #crosshair::after {
-    content: ''; position: absolute; background: rgba(240,236,228,0.5);
-  }
+  #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(240,236,228,0.5); }
   #crosshair::before { width:1px; height:100%; left:50%; top:0; }
   #crosshair::after  { width:100%; height:1px; top:50%; left:0; }
 
-
-
   /* LEFT PANEL */
   #panel-left {
-    position: absolute; top:0; left:0; bottom:0;
-    width: var(--panel-w);
-    background: var(--ui-bg);
-    border-right: 1px solid rgba(240,236,228,0.08);
-    padding: 110px 0 0;
+    position: absolute; top:0; left:0; bottom:0; width: var(--panel-w);
+    background: var(--ui-bg); border-right: 1px solid rgba(240,236,228,0.08);
     display: flex; flex-direction: column;
     pointer-events: all; backdrop-filter: blur(8px);
+    transition: transform 0.3s ease; z-index: 20;
   }
+  #brand {
+    padding: 18px 20px 14px; border-bottom: 1px solid rgba(240,236,228,0.08); flex-shrink: 0;
+  }
+  #brand h1 { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 5px; color: var(--paper); line-height: 1; }
+  #brand p  { font-size: 8px; letter-spacing: 3px; color: var(--dim); text-transform: uppercase; margin-top: 3px; }
+
   #panel-left .section-label {
-    font-size: 9px; letter-spacing: 3px; color: var(--dim);
-    padding: 0 20px 12px; text-transform: uppercase;
-    border-bottom: 1px solid rgba(240,236,228,0.08);
-    margin-bottom: 8px; flex-shrink: 0;
+    font-size: 8px; letter-spacing: 3px; color: var(--dim);
+    padding: 12px 20px; text-transform: uppercase;
+    border-bottom: 1px solid rgba(240,236,228,0.08); flex-shrink: 0;
   }
   #lens-list {
     overflow-y: auto; flex: 1;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(240,236,228,0.1) transparent;
+    scrollbar-width: thin; scrollbar-color: rgba(240,236,228,0.1) transparent;
   }
   #lens-list::-webkit-scrollbar { width: 3px; }
   #lens-list::-webkit-scrollbar-thumb { background: rgba(240,236,228,0.1); }
 
   .lens-item {
-    cursor: pointer; padding: 13px 20px;
-    border-left: 2px solid transparent;
+    cursor: pointer; padding: 11px 20px; border-left: 2px solid transparent;
     transition: all 0.15s; user-select: none; position: relative;
   }
   .lens-item:hover { background: rgba(240,236,228,0.05); }
   .lens-item.active { border-left-color: var(--accent); background: rgba(232,56,13,0.08); }
-  .lens-name { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--paper); margin-bottom: 4px; }
-  .lens-meta { font-size: 10px; color: var(--dim); letter-spacing: 0.5px; }
+  .lens-name { font-size: 11px; font-weight: 700; color: var(--paper); margin-bottom: 3px; }
+  .lens-meta { font-size: 9px; color: var(--dim); }
   .lens-meta span { color: var(--accent); font-weight: 700; }
   .zoom-badge {
     display: inline-block; font-size: 7px; letter-spacing: 2px;
-    color: var(--accent); border: 1px solid var(--accent);
-    padding: 1px 4px; margin-left: 5px; vertical-align: middle;
+    color: var(--accent); border: 1px solid var(--accent); padding: 1px 4px; margin-left: 5px; vertical-align: middle;
   }
   .lens-delete {
-    display: none; position: absolute; right: 12px; top: 50%;
-    transform: translateY(-50%);
-    background: none; border: none;
-    color: rgba(232,56,13,0.45); font-size: 18px; cursor: pointer;
-    line-height: 1; padding: 2px 5px; transition: color 0.15s;
+    display: none; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: rgba(232,56,13,0.45); font-size: 18px;
+    cursor: pointer; line-height: 1; padding: 2px 5px; transition: color 0.15s;
   }
   .lens-item:hover .lens-delete { display: block; }
   .lens-delete:hover { color: var(--accent); }
 
-  /* ADD LENS BUTTON */
   #btn-add-lens {
-    pointer-events: all; cursor: pointer;
-    background: transparent;
-    border-top: 1px solid rgba(240,236,228,0.08);
-    border-bottom: 1px solid rgba(240,236,228,0.08);
-    border-left: none; border-right: none;
-    color: var(--dim);
-    font-family: 'Space Mono', monospace;
-    font-size: 9px; font-weight: 700; letter-spacing: 3px;
-    text-transform: uppercase;
-    padding: 14px 20px;
-    display: flex; align-items: center; gap: 8px;
-    transition: all 0.15s; width: 100%; flex-shrink: 0;
+    pointer-events: all; cursor: pointer; background: transparent;
+    border-top: 1px solid rgba(240,236,228,0.08); border-bottom: 1px solid rgba(240,236,228,0.08);
+    border-left: none; border-right: none; color: var(--dim);
+    font-family: var(--font-mono); font-size: 8px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase; padding: 12px 20px;
+    display: flex; align-items: center; gap: 8px; transition: all 0.15s; width: 100%; flex-shrink: 0;
   }
-  #btn-add-lens:hover {
-    color: var(--accent);
-    border-color: rgba(232,56,13,0.25);
-    background: rgba(232,56,13,0.04);
-  }
+  #btn-add-lens:hover { color: var(--accent); border-color: rgba(232,56,13,0.25); background: rgba(232,56,13,0.04); }
 
-  /* ZOOM STRIP */
-  #zoom-strip {
-    padding: 16px 20px;
-    border-top: 1px solid rgba(240,236,228,0.08);
-    flex-shrink: 0;
-  }
-  #zoom-strip label {
-    font-size: 9px; letter-spacing: 3px; color: var(--dim);
-    display: block; margin-bottom: 10px; text-transform: uppercase;
-  }
-  #fov-slider {
-    -webkit-appearance: none; width: 100%; height: 2px;
-    background: rgba(240,236,228,0.15); outline: none; cursor: pointer;
-  }
-  #fov-slider::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 14px; height: 14px;
-    background: var(--accent); border-radius: 50%; cursor: grab;
-  }
-  #fov-readout {
-    font-size: 20px; font-family: 'Bebas Neue', sans-serif;
-    letter-spacing: 2px; color: var(--paper); margin-top: 8px;
-  }
-  #fov-readout span { font-size: 9px; color: var(--dim); margin-left: 3px; letter-spacing: 1px; }
+  #zoom-strip { padding: 14px 20px; border-top: 1px solid rgba(240,236,228,0.08); flex-shrink: 0; }
+  #zoom-strip label { font-size: 8px; letter-spacing: 3px; color: var(--dim); display: block; margin-bottom: 10px; text-transform: uppercase; }
+  #fov-slider { -webkit-appearance: none; width: 100%; height: 2px; background: rgba(240,236,228,0.15); outline: none; cursor: pointer; }
+  #fov-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--accent); border-radius: 50%; cursor: grab; }
+  #fov-readout { font-size: 20px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; color: var(--paper); margin-top: 8px; }
+  #fov-readout span { font-size: 8px; color: var(--dim); margin-left: 3px; letter-spacing: 1px; }
 
   /* RIGHT PANEL */
   #panel-right {
-    position: absolute; top:0; right:0; bottom:0;
-    width: var(--panel-w);
-    background: var(--ui-bg);
-    border-left: 1px solid rgba(240,236,228,0.08);
-    padding: 110px 0 24px;
-    display: flex; flex-direction: column;
+    position: absolute; top:0; right:0; bottom:0; width: var(--panel-w);
+    background: var(--ui-bg); border-left: 1px solid rgba(240,236,228,0.08);
+    padding: 0 0 24px; display: flex; flex-direction: column;
     pointer-events: all; backdrop-filter: blur(8px);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(240,236,228,0.1) transparent;
+    overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(240,236,228,0.1) transparent;
+    transition: transform 0.3s ease; z-index: 20;
   }
   #panel-right::-webkit-scrollbar { width: 3px; }
   #panel-right::-webkit-scrollbar-thumb { background: rgba(240,236,228,0.1); }
   #panel-right .section-label {
-    font-size: 9px; letter-spacing: 3px; color: var(--dim);
-    padding: 0 20px 12px; text-transform: uppercase;
-    border-bottom: 1px solid rgba(240,236,228,0.08);
-    margin-bottom: 16px;
+    font-size: 8px; letter-spacing: 3px; color: var(--dim);
+    padding: 18px 20px 12px; text-transform: uppercase;
+    border-bottom: 1px solid rgba(240,236,228,0.08); margin-bottom: 16px; flex-shrink: 0;
   }
-  .upload-slot { padding: 0 20px 24px; }
-  .upload-slot h3 { font-size: 11px; letter-spacing: 2px; color: var(--paper); margin-bottom: 10px; text-transform: uppercase; }
+
+  .upload-slot { padding: 0 20px 20px; }
+  .upload-slot h3 { font-size: 9px; letter-spacing: 2px; color: var(--paper); margin-bottom: 8px; text-transform: uppercase; }
   .drop-zone {
-    border: 1px dashed rgba(240,236,228,0.2); padding: 20px 12px;
+    border: 1px dashed rgba(240,236,228,0.2); padding: 16px 12px;
     text-align: center; cursor: pointer; transition: all 0.2s; position: relative;
   }
   .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: rgba(232,56,13,0.05); }
   .drop-zone input[type=file] { position: absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
-  .drop-zone .dz-icon { font-size: 20px; margin-bottom: 6px; display: block; color: var(--dim); }
-  .drop-zone p { font-size: 9px; letter-spacing: 1px; color: var(--dim); }
-  .drop-zone .dz-filename { font-size: 9px; color: var(--accent); margin-top: 6px; word-break: break-all; display: none; }
-  .upload-divider { height: 1px; background: rgba(240,236,228,0.08); margin: 0 20px 24px; }
+  .drop-zone .dz-icon { font-size: 18px; margin-bottom: 5px; display: block; color: var(--dim); }
+  .drop-zone p { font-size: 8px; letter-spacing: 1px; color: var(--dim); }
+  .drop-zone .dz-filename { font-size: 8px; color: var(--accent); margin-top: 5px; word-break: break-all; display: none; }
+  .upload-divider { height: 1px; background: rgba(240,236,228,0.08); margin: 0 20px 20px; }
 
   .scale-row {
     display: flex; align-items: center; justify-content: space-between;
-    margin-top: 10px; 
-    padding: 0 2px 10px 2px;
+    margin-top: 10px; padding: 0 2px 10px 2px;
   }
-  .scale-row label {
-    font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase;
-  }
+  .scale-row label { font-size: 8px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
   .scale-row input[type=number] {
-    width: 80px;
-    background: rgba(240,236,228,0.04);
-    border: 1px solid rgba(240,236,228,0.14);
-    color: var(--paper); font-family: 'Space Mono', monospace; font-size: 12px;
-    padding: 6px 8px; outline: none; text-align: right;
-    -moz-appearance: textfield; transition: border-color 0.15s;
+    width: 80px; background: rgba(240,236,228,0.04);
+    border: 1px solid rgba(240,236,228,0.14); color: var(--paper);
+    font-family: var(--font-mono); font-size: 11px; padding: 6px 8px;
+    outline: none; text-align: right; -moz-appearance: textfield; transition: border-color 0.15s;
   }
   .scale-row input[type=number]:focus { border-color: var(--accent); }
   .scale-row input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 
+  .transform-grid { padding: 0 0 4px; }
+  .transform-grid .field-row { display: flex; gap: 10px; }
+  .transform-grid .field-group { flex: 1; }
+  .transform-grid .field-group label {
+    display: block; font-size: 8px; letter-spacing: 1px;
+    color: var(--dim); text-transform: uppercase; margin-bottom: 5px;
+  }
+  .inline-fields { display: flex; gap: 4px; }
+  .inline-fields input {
+    flex: 1; min-width: 0; background: rgba(240,236,228,0.04);
+    border: 1px solid rgba(240,236,228,0.14); color: var(--paper);
+    font-family: var(--font-mono); font-size: 10px; padding: 5px 4px;
+    outline: none; text-align: center; -moz-appearance: textfield; transition: border-color 0.15s;
+  }
+  .inline-fields input:focus { border-color: var(--accent); }
+  .inline-fields input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
   /* BOTTOM BAR */
   #bottom-bar {
-    position: absolute; bottom:0;
-    left: var(--panel-w); right: var(--panel-w);
-    height: 48px;
-    background: var(--ui-bg);
+    position: absolute; bottom:0; left: var(--panel-w); right: var(--panel-w);
+    height: var(--bottom-h); background: var(--ui-bg);
     border-top: 1px solid rgba(240,236,228,0.08);
     display: flex; align-items: center; justify-content: center;
-    gap: 24px; backdrop-filter: blur(8px);
-    pointer-events: none; overflow: hidden;
+    gap: 20px; backdrop-filter: blur(8px); pointer-events: none; overflow: hidden; z-index: 15;
   }
-  .ctrl-hint {
-    font-size: 9px; letter-spacing: 2px; color: var(--dim);
-    text-transform: uppercase; display: flex; align-items: center; gap: 5px;
-  }
-  .ctrl-hint kbd {
-    display: inline-block; border: 1px solid rgba(240,236,228,0.2);
-    padding: 2px 5px; font-family: 'Space Mono', monospace;
-    font-size: 8px; color: var(--paper); border-radius: 2px;
-  }
+  .ctrl-hint { font-size: 8px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
+  .ctrl-hint kbd { display: inline-block; border: 1px solid rgba(240,236,228,0.2); padding: 2px 4px; font-family: var(--font-mono); font-size: 7px; color: var(--paper); border-radius: 2px; }
   #btn-export {
-    pointer-events: all; cursor: pointer;
-    background: var(--accent); border: none;
-    color: var(--paper); font-family: 'Space Mono', monospace;
-    font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-    padding: 0 20px; height: 100%;
-    display: flex; align-items: center; gap: 7px;
-    transition: background 0.15s; flex-shrink: 0; margin-left: 6px;
+    pointer-events: all; cursor: pointer; background: var(--accent); border: none;
+    color: var(--paper); font-family: var(--font-mono); font-size: 8px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; padding: 0 18px; height: 100%;
+    display: flex; align-items: center; gap: 6px; transition: background 0.15s; flex-shrink: 0;
   }
   #btn-export:hover { background: #ff4e22; }
   #btn-export:active { filter: brightness(0.88); }
@@ -243,24 +190,18 @@
   #modal-overlay.open { opacity: 1; pointer-events: all; }
   #modal {
     background: #111; border: 1px solid rgba(240,236,228,0.12);
-    width: 400px; padding: 34px;
+    width: min(400px, calc(100vw - 32px)); padding: 28px;
     transform: translateY(14px); transition: transform 0.2s;
   }
   #modal-overlay.open #modal { transform: translateY(0); }
-  #modal h2 {
-    font-family: 'Bebas Neue', sans-serif; font-size: 30px;
-    letter-spacing: 5px; color: var(--paper); margin-bottom: 4px;
-  }
-  .modal-sub { font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 28px; }
-  .field-group { margin-bottom: 18px; }
-  .field-group label { display: block; font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 7px; }
-  .field-group input[type=text],
-  .field-group input[type=number] {
-    width: 100%; background: rgba(240,236,228,0.04);
-    border: 1px solid rgba(240,236,228,0.14);
-    color: var(--paper); font-family: 'Space Mono', monospace; font-size: 13px;
-    padding: 10px 12px; outline: none; transition: border-color 0.15s;
-    -moz-appearance: textfield;
+  #modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 5px; color: var(--paper); margin-bottom: 4px; }
+  .modal-sub { font-size: 8px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 24px; }
+  .field-group { margin-bottom: 16px; }
+  .field-group label { display: block; font-size: 8px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 6px; }
+  .field-group input[type=text], .field-group input[type=number] {
+    width: 100%; background: rgba(240,236,228,0.04); border: 1px solid rgba(240,236,228,0.14);
+    color: var(--paper); font-family: var(--font-mono); font-size: 13px;
+    padding: 10px 12px; outline: none; transition: border-color 0.15s; -moz-appearance: textfield;
   }
   .field-group input:focus { border-color: var(--accent); }
   .field-group input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
@@ -272,59 +213,83 @@
   .toggle-wrap { display: flex; align-items: center; gap: 14px; }
   .toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
   .toggle input { opacity: 0; width: 0; height: 0; }
-  .toggle-track {
-    position: absolute; inset: 0;
-    background: rgba(240,236,228,0.08); border: 1px solid rgba(240,236,228,0.18);
-    cursor: pointer; transition: all 0.2s;
-  }
-  .toggle-track::after {
-    content: ''; position: absolute; left: 3px; top: 3px;
-    width: 14px; height: 14px; background: var(--dim); transition: all 0.2s;
-  }
+  .toggle-track { position: absolute; inset: 0; background: rgba(240,236,228,0.08); border: 1px solid rgba(240,236,228,0.18); cursor: pointer; transition: all 0.2s; }
+  .toggle-track::after { content: ''; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; background: var(--dim); transition: all 0.2s; }
   .toggle input:checked + .toggle-track { background: rgba(232,56,13,0.18); border-color: var(--accent); }
   .toggle input:checked + .toggle-track::after { left: 21px; background: var(--accent); }
-  .toggle-label { font-size: 11px; letter-spacing: 1px; color: var(--paper); }
-
-  .modal-error { font-size: 9px; color: var(--accent); letter-spacing: 1px; margin-top: 10px; min-height: 14px; }
-  .modal-actions { display: flex; gap: 10px; margin-top: 26px; }
-  .btn-primary {
-    flex: 1; background: var(--accent); border: none; color: var(--paper);
-    font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700;
-    letter-spacing: 2px; text-transform: uppercase; padding: 13px; cursor: pointer; transition: background 0.15s;
-  }
+  .toggle-label { font-size: 10px; letter-spacing: 1px; color: var(--paper); }
+  .modal-error { font-size: 8px; color: var(--accent); letter-spacing: 1px; margin-top: 10px; min-height: 14px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .btn-primary { flex: 1; background: var(--accent); border: none; color: var(--paper); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 13px; cursor: pointer; transition: background 0.15s; }
   .btn-primary:hover { background: #ff4e22; }
-  .btn-secondary {
-    background: transparent; border: 1px solid rgba(240,236,228,0.14); color: var(--dim);
-    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px;
-    text-transform: uppercase; padding: 13px 20px; cursor: pointer; transition: all 0.15s;
-  }
+  .btn-secondary { background: transparent; border: 1px solid rgba(240,236,228,0.14); color: var(--dim); font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; padding: 13px 18px; cursor: pointer; transition: all 0.15s; }
   .btn-secondary:hover { border-color: var(--paper); color: var(--paper); }
+
+  /* Tab buttons — mobile only, hidden on desktop */
+  #tab-left-mobile, #tab-right-mobile { display: none; }
+
+  /* TABLET ≤ 1024px */
+  @media (max-width: 1024px) {
+    :root { --panel-w: 230px; }
+    .ctrl-hint { display: none; }
+    #bottom-bar { gap: 0; justify-content: flex-end; }
+    #brand h1 { font-size: 28px; }
+    #brand p  { font-size: 7px; }
+  }
+
+  /* MOBILE ≤ 700px — panels become slide-in drawers */
+  @media (max-width: 700px) {
+    :root { --panel-w: 280px; --bottom-h: 52px; }
+
+    #panel-left  { transform: translateX(-100%); bottom: var(--bottom-h); }
+    #panel-right { transform: translateX(100%);  bottom: var(--bottom-h); }
+    #panel-left.open  { transform: translateX(0); }
+    #panel-right.open { transform: translateX(0); }
+
+    #bottom-bar { left: 0; right: 0; justify-content: space-between; padding: 0; gap: 0; }
+    .ctrl-hint { display: none; }
+
+    #tab-left-mobile, #tab-right-mobile {
+      pointer-events: all; height: 100%;
+      display: flex; align-items: center;
+      background: transparent; border: none; color: var(--dim);
+      font-family: var(--font-mono); font-size: 8px; letter-spacing: 2px; text-transform: uppercase;
+      padding: 0 16px; cursor: pointer; gap: 6px; flex-shrink: 0; transition: color 0.15s;
+    }
+    #tab-left-mobile  { border-right: 1px solid rgba(240,236,228,0.08); }
+    #tab-right-mobile { border-left:  1px solid rgba(240,236,228,0.08); }
+    #tab-left-mobile.active,  #tab-left-mobile:hover  { color: var(--accent); }
+    #tab-right-mobile.active, #tab-right-mobile:hover { color: var(--accent); }
+
+    #btn-export { flex: 1; justify-content: center; }
+  }
 </style>
 </head>
 <body>
 
 <div id="hud">
+  <div id="crosshair"></div>
 
-  <!-- Left Panel <div id="crosshair"></div> --> 
   <div id="panel-left">
-    <div id="brand"><h1>MUXR Previs</h1><p>RED KOMODO &mdash; Super 35 / APS-C</p></div>
-    
+    <div id="brand">
+      <h1>MUXR Previs</h1>
+      <p>RED KOMODO &mdash; Super 35 / APS-C</p>
+    </div>
     <div class="section-label">Lens Selection</div>
     <div id="lens-list"></div>
     <button id="btn-add-lens">&#43;&nbsp;&nbsp;Custom Lens</button>
     <div id="zoom-strip">
-      <label>Focal Length — Super 35</label>
+      <label>Focal Length &mdash; Super 35</label>
       <input type="range" id="fov-slider" min="0" max="1" step="0.001" value="0">
       <div id="fov-readout">35mm<span>actual &nbsp;|&nbsp; 51mm FF equiv</span></div>
     </div>
   </div>
 
-  <!-- Right Panel -->
   <div id="panel-right">
     <div class="section-label">Scene Content</div>
 
     <div class="upload-slot">
-      <h3>Wall Texture (4752*1584)</h3>
+      <h3>Wall Texture (4752&times;1584)</h3>
       <div class="drop-zone" id="dz-wall">
         <input type="file" id="file-wall" accept="image/*,video/*">
         <span class="dz-icon">&#9633;</span>
@@ -336,7 +301,7 @@
     <div class="upload-divider"></div>
 
     <div class="upload-slot">
-      <h3>Floor Texture (1280*896)</h3>
+      <h3>Floor Texture (1280&times;896)</h3>
       <div class="drop-zone" id="dz-floor">
         <input type="file" id="file-floor" accept="image/*,video/*">
         <span class="dz-icon">&#9633;</span>
@@ -364,8 +329,8 @@
           <div class="field-group">
             <label>Position (m)</label>
             <div class="inline-fields">
-              <input type="number" id="standin-pos-x" value="0" step="0.01" title="X">
-              <input type="number" id="standin-pos-y" value="0" step="0.01" title="Y">
+              <input type="number" id="standin-pos-x" value="0"   step="0.01" title="X">
+              <input type="number" id="standin-pos-y" value="0"   step="0.01" title="Y">
               <input type="number" id="standin-pos-z" value="2.5" step="0.01" title="Z">
             </div>
           </div>
@@ -382,7 +347,6 @@
     </div>
   </div>
 
-  <!-- Bottom Bar -->
   <div id="bottom-bar">
     <div class="ctrl-hint"><kbd>W A S D</kbd> Move</div>
     <div class="ctrl-hint"><kbd>DRAG</kbd> Look</div>
@@ -392,30 +356,28 @@
   </div>
 </div>
 
-
+<!-- Panel backdrop (mobile tap-to-close) -->
+<div id="panel-backdrop" style="display:none;position:fixed;inset:0 0 var(--bottom-h) 0;background:rgba(0,0,0,0.5);z-index:19;pointer-events:all;"></div>
 
 <!-- Custom Lens Modal -->
 <div id="modal-overlay">
   <div id="modal">
     <h2>Custom Lens</h2>
     <p class="modal-sub">Define your own optic</p>
-
     <div class="field-group">
       <label>Lens Name</label>
       <input type="text" id="cl-name" placeholder="e.g. Vintage 35mm" maxlength="36" autocomplete="off">
     </div>
-
     <div class="field-row">
       <div class="field-group">
         <label>Start focal length</label>
-        <input type="number" id="cl-fov-start" placeholder="25" min="1" max="179">
+        <input type="number" id="cl-fov-start" placeholder="25" min="1" max="999">
       </div>
       <div class="field-group" id="end-fov-group">
         <label>End focal length</label>
-        <input type="number" id="cl-fov-end" placeholder="100" min="1" max="179">
+        <input type="number" id="cl-fov-end" placeholder="100" min="1" max="999">
       </div>
     </div>
-
     <div class="field-group">
       <label>Lens Type</label>
       <div class="toggle-wrap">
@@ -426,70 +388,75 @@
         <span class="toggle-label" id="zoom-toggle-label">Prime &mdash; fixed focal length</span>
       </div>
     </div>
-
     <div class="modal-error" id="modal-error"></div>
-
     <div class="modal-actions">
       <button class="btn-secondary" id="btn-modal-cancel">Cancel</button>
-      <button class="btn-primary" id="btn-modal-save">Add Lens</button>
+      <button class="btn-primary"   id="btn-modal-save">Add Lens</button>
     </div>
   </div>
 </div>
 
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ================================================================
+// MOBILE PANEL TOGGLE
+// ================================================================
+(function () {
+  const bar      = document.getElementById('bottom-bar');
+  const panelL   = document.getElementById('panel-left');
+  const panelR   = document.getElementById('panel-right');
+  const backdrop = document.getElementById('panel-backdrop');
+  const BP       = 700;
+
+  const tabL = document.createElement('button'); tabL.id = 'tab-left-mobile';  tabL.innerHTML = '&#9776; Lenses';
+  const tabR = document.createElement('button'); tabR.id = 'tab-right-mobile'; tabR.innerHTML = 'Scene &#9776;';
+  bar.prepend(tabL); bar.appendChild(tabR);
+
+  function isMobile() { return window.innerWidth <= BP; }
+  function closeAll() {
+    panelL.classList.remove('open'); panelR.classList.remove('open');
+    tabL.classList.remove('active'); tabR.classList.remove('active');
+    backdrop.style.display = 'none';
+  }
+  tabL.addEventListener('click', () => {
+    if (!isMobile()) return;
+    const opening = !panelL.classList.contains('open'); closeAll();
+    if (opening) { panelL.classList.add('open'); tabL.classList.add('active'); backdrop.style.display = 'block'; }
+  });
+  tabR.addEventListener('click', () => {
+    if (!isMobile()) return;
+    const opening = !panelR.classList.contains('open'); closeAll();
+    if (opening) { panelR.classList.add('open'); tabR.classList.add('active'); backdrop.style.display = 'block'; }
+  });
+  backdrop.addEventListener('click', closeAll);
+  window.addEventListener('resize', () => { if (!isMobile()) closeAll(); });
+}());
+
+// ================================================================
 // SENSOR — RED KOMODO Super 35 / APS-C
-// Physical sensor: 27.03mm wide × 14.26mm tall (6K 17:9 mode)
-// Crop factor vs full-frame: ~1.46x (use 1.5 for common notation)
-// FOV from focal length: FOV = 2 * atan(sensorHeight / (2 * focalLength))
 // ================================================================
-const SENSOR_HEIGHT_MM = 14.26; // Red Komodo Super 35 sensor height
-const CROP_FACTOR      = 1.46;  // Super 35 crop vs full-frame
-
-// Convert a real focal length (mm) to vertical FOV (degrees) on this sensor
-function focalToFov(focalMm) {
-  return 2 * Math.atan(SENSOR_HEIGHT_MM / (2 * focalMm)) * (180 / Math.PI);
-}
-
-// Convert a vertical FOV (degrees) back to real focal length on this sensor
-function fovToFocalMm(fov) {
-  return SENSOR_HEIGHT_MM / (2 * Math.tan((fov / 2) * (Math.PI / 180)));
-}
-
-// Full-frame equivalent focal length from actual focal length
-function focalToFFEquiv(focalMm) {
-  return Math.round(focalMm * CROP_FACTOR);
-}
-
-// Primary display: actual focal length on sensor, rounded to nearest mm
-function fovToMm(fov) {
-  return Math.round(fovToFocalMm(fov));
-}
-
-// Full-frame equivalent for display
-function fovToFFMm(fov) {
-  return Math.round(fovToFocalMm(fov) * CROP_FACTOR);
-}
+const SENSOR_HEIGHT_MM = 14.26;
+const CROP_FACTOR      = 1.46;
+function focalToFov(mm)  { return 2 * Math.atan(SENSOR_HEIGHT_MM / (2 * mm)) * (180 / Math.PI); }
+function fovToFocalMm(f) { return SENSOR_HEIGHT_MM / (2 * Math.tan((f / 2) * (Math.PI / 180))); }
+function fovToMm(fov)    { return Math.round(fovToFocalMm(fov)); }
+function fovToFFMm(fov)  { return Math.round(fovToFocalMm(fov) * CROP_FACTOR); }
 
 // ================================================================
-// LENS DATA — FOVs calculated for APS-C / Super 35 sensor
-// Focal lengths are the ACTUAL lens focal lengths (not FF equiv)
+// LENS DATA
 // ================================================================
 const LENSES = [
-  { name: '50-100mm T2 Sigma Cine-zoom', startFov: focalToFov(50),   endFov: focalToFov(100),   zoom: true },
-  { name: '15mm T2.1 Zeiss CP.3', startFov: focalToFov(15),  endFov: focalToFov(15),  zoom: false },
-  { name: '25mm T2.1 Zeiss CP.3', startFov: focalToFov(25),  endFov: focalToFov(25),  zoom: false },
-  { name: '35mm T2.1 Zeiss CP.3',   startFov: focalToFov(35),  endFov: focalToFov(35),  zoom: false },
-  { name: '50mm T2.1 Zeiss CP.3',   startFov: focalToFov(50),  endFov: focalToFov(50),  zoom: false },
-  { name: '85mm T2.1 Zeiss Cp.3', startFov: focalToFov(85),  endFov: focalToFov(85),  zoom: false },
+  { name: '50-100mm T2 Sigma Cine-zoom', startFov: focalToFov(50),  endFov: focalToFov(100), zoom: true  },
+  { name: '15mm T2.1 Zeiss CP.3',        startFov: focalToFov(15),  endFov: focalToFov(15),  zoom: false },
+  { name: '25mm T2.1 Zeiss CP.3',        startFov: focalToFov(25),  endFov: focalToFov(25),  zoom: false },
+  { name: '35mm T2.1 Zeiss CP.3',        startFov: focalToFov(35),  endFov: focalToFov(35),  zoom: false },
+  { name: '50mm T2.1 Zeiss CP.3',        startFov: focalToFov(50),  endFov: focalToFov(50),  zoom: false },
+  { name: '85mm T2.1 Zeiss CP.3',        startFov: focalToFov(85),  endFov: focalToFov(85),  zoom: false },
 ];
 const NUM_BUILTIN = LENSES.length;
 
 // ================================================================
 // THREE.JS SETUP
-// preserveDrawingBuffer:true is required for toDataURL export
 // ================================================================
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -505,199 +472,156 @@ scene.fog = new THREE.Fog(0x0e0e0e, 20, 60);
 const camera = new THREE.PerspectiveCamera(focalToFov(35), window.innerWidth / window.innerHeight, 0.05, 200);
 camera.position.set(0, 1.7, 10);
 
-// Lighting
 scene.add(new THREE.AmbientLight(0xfff0e0, 0.4));
-const spot = new THREE.SpotLight(0xfff5e8, 1.6, 40, Math.PI/6, 0.5);
-spot.position.set(0, 10, 2.5);
-spot.castShadow = true;
-spot.shadow.mapSize.set(2048, 2048);
+const spot = new THREE.SpotLight(0xfff5e8, 1.6, 40, Math.PI / 6, 0.5);
+spot.position.set(0, 10, 2.5); spot.castShadow = true; spot.shadow.mapSize.set(2048, 2048);
 scene.add(spot);
-const fl = new THREE.PointLight(0x4466cc, 0.3, 20);
-fl.position.set(-4, 4, 8);
-scene.add(fl);
-const fr = new THREE.PointLight(0xcc6644, 0.2, 20);
-fr.position.set(0, 4, 9);
-scene.add(fr);
+const flLight = new THREE.PointLight(0x4466cc, 0.3, 20); flLight.position.set(-4, 4, 8); scene.add(flLight);
+const frLight = new THREE.PointLight(0xcc6644, 0.2, 20); frLight.position.set(0, 4, 9);  scene.add(frLight);
 
 // ================================================================
-// OBJ MESH LOADER
+// OBJ LOADER
 // ================================================================
+// ================================================================
+// DEFAULT GRID TEXTURES — 352px per metre, centered
+// ================================================================
+function makeGridTexture(W, H, cellPx) {
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
 
-const wallMat    = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
-const floorMat   = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
-const StageRoomMat = new THREE.MeshStandardMaterial({
-  color:     0xff0000,
-  roughness: 0.8,
-  metalness: 0.2,
-  transparent: true,
-  opacity: 0.5,
-});
+  // Dark background
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(0, 0, W, H);
 
-const standinMat = new THREE.MeshStandardMaterial({
-  color:     0xcccccc,
-  roughness: 0.6,
-  metalness: 0.1,
-});
+  // Centre the grid: offset by half the fractional remainder
+  const offX = ((W % cellPx) / 2);
+  const offY = ((H % cellPx) / 2);
 
-// Proxy objects so texture code can always reference .material
-const wall    = { material: wallMat,    meshes: [] };
-const floor   = { material: floorMat,   meshes: [] };
-const room   = { material: StageRoomMat, meshes: [] };
-const standin = { material: standinMat, meshes: [] };
+  // Minor grid lines — every 1m
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  for (let x = offX; x <= W; x += cellPx) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = offY; y <= H; y += cellPx) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
 
-function loadOBJFromText(text, proxy, sharedMat) {
-  const positions = [], uvs = [], normals = [];
-  const posOut = [], uvOut = [], normOut = [];
+  // Major lines — every 5m
+  ctx.strokeStyle = 'rgba(255,255,255,0.32)';
+  ctx.lineWidth = 2;
+  // Find first 5-cell-aligned line from the offset
+  const step5 = cellPx * 5;
+  const offX5 = offX + ((step5 - (offX % step5)) % step5);
+  const offY5 = offY + ((step5 - (offY % step5)) % step5);
+  for (let x = offX5; x <= W; x += step5) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  // Also draw to the left of offX5
+  for (let x = offX5 - step5; x >= 0; x -= step5) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = offY5; y <= H; y += step5) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  for (let y = offY5 - step5; y >= 0; y -= step5) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
 
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = true;
+  return tex;
+}
+
+const wallGridTex  = makeGridTexture(4752, 1584, 352);
+const floorGridTex = makeGridTexture(2146, 1504, 352);
+
+const wallMat  = new THREE.MeshBasicMaterial({ map: wallGridTex,  color: 0xffffff });
+const floorMat = new THREE.MeshBasicMaterial({ map: floorGridTex, color: 0xffffff });
+const StageRoomMat = new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.8, metalness: 0.2, transparent: true, opacity: 0.5 });
+const standinMat   = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.6, metalness: 0.1 });
+
+const wall    = { material: wallMat,      meshes: [] };
+const floor   = { material: floorMat,     meshes: [] };
+const room    = { material: StageRoomMat, meshes: [] };
+const standin = { material: standinMat,   meshes: [] };
+
+function loadOBJFromText(text, proxy, mat) {
+  const pos = [], uvs = [], nrm = [], pO = [], uO = [], nO = [];
   for (const raw of text.split('\n')) {
-    const line = raw.trim();
-    if (line.startsWith('v ')) {
-      const [, x, y, z] = line.split(/\s+/);
-      positions.push(parseFloat(x), parseFloat(y), parseFloat(z));
-    } else if (line.startsWith('vt ')) {
-      const [, u, v] = line.split(/\s+/);
-      uvs.push(parseFloat(u), parseFloat(v));
-    } else if (line.startsWith('vn ')) {
-      const [, x, y, z] = line.split(/\s+/);
-      normals.push(parseFloat(x), parseFloat(y), parseFloat(z));
-    } else if (line.startsWith('f ')) {
-      const verts = line.slice(2).trim().split(/\s+/);
-      for (let i = 1; i < verts.length - 1; i++) {
-        for (const v of [verts[0], verts[i], verts[i + 1]]) {
-          const parts = v.split('/');
-          const pi = (parseInt(parts[0]) - 1) * 3;
-          posOut.push(positions[pi], positions[pi+1], positions[pi+2]);
-          if (parts[1] && parts[1] !== '' && uvs.length) {
-            const ti = (parseInt(parts[1]) - 1) * 2;
-            uvOut.push(uvs[ti], uvs[ti+1]);
-          }
-          if (parts[2] && normals.length) {
-            const ni = (parseInt(parts[2]) - 1) * 3;
-            normOut.push(normals[ni], normals[ni+1], normals[ni+2]);
-          }
+    const l = raw.trim();
+    if (l.startsWith('v '))  { const [,x,y,z] = l.split(/\s+/); pos.push(+x,+y,+z); }
+    else if (l.startsWith('vt ')) { const [,u,v] = l.split(/\s+/); uvs.push(+u,+v); }
+    else if (l.startsWith('vn ')) { const [,x,y,z] = l.split(/\s+/); nrm.push(+x,+y,+z); }
+    else if (l.startsWith('f ')) {
+      const vv = l.slice(2).trim().split(/\s+/);
+      for (let i = 1; i < vv.length - 1; i++) {
+        for (const v of [vv[0], vv[i], vv[i+1]]) {
+          const p = v.split('/'), pi = (parseInt(p[0])-1)*3;
+          pO.push(pos[pi], pos[pi+1], pos[pi+2]);
+          if (p[1] && p[1] !== '' && uvs.length) { const ti=(parseInt(p[1])-1)*2; uO.push(uvs[ti],uvs[ti+1]); }
+          if (p[2] && nrm.length) { const ni=(parseInt(p[2])-1)*3; nO.push(nrm[ni],nrm[ni+1],nrm[ni+2]); }
         }
       }
     }
   }
-
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(posOut, 3));
-  if (uvOut.length)   geo.setAttribute('uv',     new THREE.Float32BufferAttribute(uvOut, 2));
-  if (normOut.length) geo.setAttribute('normal', new THREE.Float32BufferAttribute(normOut, 3));
-  else                geo.computeVertexNormals();
-
-  // Remove old meshes
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pO, 3));
+  if (uO.length) geo.setAttribute('uv',     new THREE.Float32BufferAttribute(uO, 2));
+  if (nO.length) geo.setAttribute('normal', new THREE.Float32BufferAttribute(nO, 3));
+  else           geo.computeVertexNormals();
   for (const m of proxy.meshes) scene.remove(m);
   proxy.meshes.length = 0;
-
-  const mesh = new THREE.Mesh(geo, sharedMat);
-  mesh.castShadow    = true;
-  mesh.receiveShadow = true;
-  scene.add(mesh);
-  proxy.meshes.push(mesh);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = mesh.receiveShadow = true;
+  scene.add(mesh); proxy.meshes.push(mesh);
 }
 
-
-
-
 // ================================================================
-// METER GRID PLANE — 46x46m, 1m cells, transparent overlay
-// Even cell count ensures grid lines land exactly on world 0,0
+// METER GRID 46x46m
 // ================================================================
 (function () {
-  const SIZE  = 46; // world units (metres) — even so centre = grid intersection
-  const CELLS = 46; // one cell per metre
-  const PX    = 40; // pixels per cell — 2× previous resolution
-
-  const W = CELLS * PX;
-  const H = CELLS * PX;
-
-  const canvas = document.createElement('canvas');
-  canvas.width  = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
-
-  // Minor lines — every 1m
-  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-  ctx.lineWidth   = 1;
-  for (let i = 0; i <= CELLS; i++) {
-    const x = i * PX;
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, x); ctx.lineTo(W, x); ctx.stroke();
-  }
-
-  // Major lines — every 5m
-  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-  ctx.lineWidth   = 2;
-  for (let i = 0; i <= CELLS; i += 5) {
-    const x = i * PX;
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, x); ctx.lineTo(W, x); ctx.stroke();
-  }
-
-  // Centre crosshair at world origin (0,0) — the middle of the even grid
-  const cx = (CELLS / 2) * PX;
-  ctx.strokeStyle = 'rgba(200,120,110,0.7)';
-  ctx.lineWidth   = 2;
-  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0, cx); ctx.lineTo(W, cx); ctx.stroke();
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-
-  const mat = new THREE.MeshBasicMaterial({
-    map:         tex,
-    transparent: true,
-    opacity:     1,
-    depthWrite:  false,
-    side:        THREE.DoubleSide,
-  });
-
-  const grid = new THREE.Mesh(new THREE.PlaneGeometry(SIZE, SIZE), mat);
-  grid.rotation.x = -Math.PI / 2;
-  grid.position.set(0, 0, 0);
-  scene.add(grid);
+  const SIZE = 46, CELLS = 46, PX = 40, W = CELLS*PX, H = CELLS*PX;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= CELLS; i++) { const x=i*PX; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,x); ctx.lineTo(W,x); ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
+  for (let i = 0; i <= CELLS; i+=5) { const x=i*PX; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,x); ctx.lineTo(W,x); ctx.stroke(); }
+  const cx = (CELLS/2)*PX; ctx.strokeStyle = 'rgba(200,120,110,0.7)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,cx); ctx.lineTo(W,cx); ctx.stroke();
+  const tex = new THREE.CanvasTexture(cv); tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  const gm = new THREE.Mesh(new THREE.PlaneGeometry(SIZE,SIZE), new THREE.MeshBasicMaterial({ map:tex, transparent:true, opacity:1, depthWrite:false, side:THREE.DoubleSide }));
+  gm.rotation.x = -Math.PI/2; gm.position.set(0, 0.05, 0); scene.add(gm);
 }());
+
+// ================================================================
+// CAMERA CONTROLLER
+// ================================================================
 const keys = {};
 document.addEventListener('keydown', e => { if (!e.target.matches('input,textarea')) keys[e.code] = true; });
 document.addEventListener('keyup',   e => keys[e.code] = false);
-
-let pitch = 0, yaw = 0;
-let dragging = false, lastX = 0, lastY = 0;
-
-renderer.domElement.addEventListener('mousedown', e => {
-  if (e.target !== renderer.domElement) return;
-  dragging = true; lastX = e.clientX; lastY = e.clientY;
-});
-document.addEventListener('mouseup', () => dragging = false);
-document.addEventListener('mousemove', e => {
-  if (!dragging) return;
-  yaw   -= (e.clientX - lastX) * 0.002;
-  pitch -= (e.clientY - lastY) * 0.002;
-  pitch = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, pitch));
-  lastX = e.clientX; lastY = e.clientY;
-});
-renderer.domElement.addEventListener('touchstart', e => {
-  dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-}, { passive: true });
-document.addEventListener('touchend', () => dragging = false);
-document.addEventListener('touchmove', e => {
-  if (!dragging) return;
-  yaw   -= (e.touches[0].clientX - lastX) * 0.003;
-  pitch -= (e.touches[0].clientY - lastY) * 0.003;
-  pitch = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, pitch));
-  lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-}, { passive: true });
+let pitch=0, yaw=0, dragging=false, lastX=0, lastY=0;
+renderer.domElement.addEventListener('mousedown', e => { if (e.target!==renderer.domElement) return; dragging=true; lastX=e.clientX; lastY=e.clientY; });
+document.addEventListener('mouseup',   () => dragging=false);
+document.addEventListener('mousemove', e => { if (!dragging) return; yaw-=(e.clientX-lastX)*0.002; pitch-=(e.clientY-lastY)*0.002; pitch=Math.max(-Math.PI/2.2,Math.min(Math.PI/2.2,pitch)); lastX=e.clientX; lastY=e.clientY; });
+renderer.domElement.addEventListener('touchstart', e => { dragging=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; }, { passive:true });
+document.addEventListener('touchend',  () => dragging=false);
+document.addEventListener('touchmove', e => { if (!dragging) return; yaw-=(e.touches[0].clientX-lastX)*0.003; pitch-=(e.touches[0].clientY-lastY)*0.003; pitch=Math.max(-Math.PI/2.2,Math.min(Math.PI/2.2,pitch)); lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; }, { passive:true });
 
 function updateCamera(dt) {
-  const speed = (keys['ShiftLeft'] || keys['ShiftRight']) ? 8 : 2.5;
+  const speed = (keys['ShiftLeft']||keys['ShiftRight']) ? 8 : 2.5;
   const fwd   = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
-  const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-  if (keys['KeyW'] || keys['ArrowUp'])    camera.position.addScaledVector(fwd,   speed*dt);
-  if (keys['KeyS'] || keys['ArrowDown'])  camera.position.addScaledVector(fwd,  -speed*dt);
-  if (keys['KeyA'] || keys['ArrowLeft'])  camera.position.addScaledVector(right,-speed*dt);
-  if (keys['KeyD'] || keys['ArrowRight']) camera.position.addScaledVector(right, speed*dt);
+  const right = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
+  if (keys['KeyW']||keys['ArrowUp'])    camera.position.addScaledVector(fwd,    speed*dt);
+  if (keys['KeyS']||keys['ArrowDown'])  camera.position.addScaledVector(fwd,   -speed*dt);
+  if (keys['KeyA']||keys['ArrowLeft'])  camera.position.addScaledVector(right, -speed*dt);
+  if (keys['KeyD']||keys['ArrowRight']) camera.position.addScaledVector(right,  speed*dt);
   if (keys['KeyQ']) camera.position.y += speed*dt*0.5;
   if (keys['KeyE']) camera.position.y -= speed*dt*0.5;
   camera.position.y = Math.max(0.2, camera.position.y);
@@ -709,47 +633,28 @@ function updateCamera(dt) {
 // ================================================================
 // FOV / LENS SYSTEM
 // ================================================================
-let currentLens = LENSES[2]; // Standard 35mm — natural FOV on Super 35
-let currentFov  = currentLens.startFov;
-let targetFov   = currentFov;
-
-const fovSlider  = document.getElementById('fov-slider');
-const fovReadout = document.getElementById('fov-readout');
-
-function fovToMm(fov) { return Math.round(fovToFocalMm(fov)); }
+let currentLens = LENSES[2], currentFov = LENSES[2].startFov, targetFov = LENSES[2].startFov;
+const fovSlider = document.getElementById('fov-slider'), fovReadout = document.getElementById('fov-readout');
 
 function updateFovReadout(fov) {
-  const actual = fovToMm(fov);
-  const ffEquiv = fovToFFMm(fov);
-  fovReadout.innerHTML = actual + 'mm<span>actual &nbsp;|&nbsp; ' + ffEquiv + 'mm FF equiv</span>';
+  fovReadout.innerHTML = fovToMm(fov) + 'mm<span>actual &nbsp;|&nbsp; ' + fovToFFMm(fov) + 'mm FF equiv</span>';
 }
-
 function selectLens(index) {
-  lens = LENSES[index];
-  currentLens = lens;
-  targetFov   = lens.startFov;
-  fovSlider.value = 0;
-  fovSlider.disabled = !lens.zoom;
-  fovSlider.style.opacity = lens.zoom ? '1' : '0.3';
-  document.querySelectorAll('.lens-item').forEach(el => {
-    el.classList.toggle('active', parseInt(el.dataset.index) === index);
-  });
+  const lens = LENSES[index]; currentLens = lens; targetFov = lens.startFov;
+  fovSlider.value = 0; fovSlider.disabled = !lens.zoom; fovSlider.style.opacity = lens.zoom ? '1' : '0.3';
+  document.querySelectorAll('.lens-item').forEach(el => el.classList.toggle('active', parseInt(el.dataset.index) === index));
   updateFovReadout(lens.startFov);
 }
-
 fovSlider.addEventListener('input', () => {
   if (!currentLens.zoom) return;
   const t = parseFloat(fovSlider.value);
   targetFov = currentLens.startFov + t * (currentLens.endFov - currentLens.startFov);
   updateFovReadout(targetFov);
 });
-
 renderer.domElement.addEventListener('wheel', e => {
-  if (!currentLens.zoom) return;
-  e.preventDefault();
+  if (!currentLens.zoom) return; e.preventDefault();
   let t = parseFloat(fovSlider.value) + e.deltaY * 0.001;
-  t = Math.max(0, Math.min(1, t));
-  fovSlider.value = t;
+  t = Math.max(0, Math.min(1, t)); fovSlider.value = t;
   targetFov = currentLens.startFov + t * (currentLens.endFov - currentLens.startFov);
   updateFovReadout(targetFov);
 }, { passive: false });
@@ -758,429 +663,192 @@ renderer.domElement.addEventListener('wheel', e => {
 // LENS LIST UI
 // ================================================================
 const lensList = document.getElementById('lens-list');
-
 function rebuildLensList() {
   lensList.innerHTML = '';
   LENSES.forEach((lens, i) => {
     const isCustom = i >= NUM_BUILTIN;
     const el = document.createElement('div');
-    el.className = 'lens-item';
-    if (lens === currentLens) el.classList.add('active');
-    el.dataset.index = i;
-
-    const zoomBadge   = lens.zoom   ? '<span class="zoom-badge">ZOOM</span>' : '';
-    const customBadge = isCustom    ? '<span class="zoom-badge" style="border-color:#b0a898;color:#b0a898;margin-left:3px">CUSTOM</span>' : '';
-    const fovRange    = lens.zoom   ? ' &rarr; <span>' + lens.endFov.toFixed(2) + '&deg;</span>' : '';
-    const deleteBtn   = isCustom    ? '<button class="lens-delete" title="Remove">&times;</button>' : '';
-
+    el.className = 'lens-item'; if (lens === currentLens) el.classList.add('active'); el.dataset.index = i;
     el.innerHTML =
-      '<div class="lens-name">' + lens.name + zoomBadge + customBadge + '</div>' +
-      '<div class="lens-meta">FOV <span>' + lens.startFov.toFixed(2) + '&deg;</span>' + fovRange + '</div>' +
-      deleteBtn;
-
-    el.addEventListener('click', function(e) {
-      if (e.target.classList.contains('lens-delete')) return;
-      selectLens(parseInt(el.dataset.index));
-    });
-
+      '<div class="lens-name">' + lens.name +
+      (lens.zoom ? '<span class="zoom-badge">ZOOM</span>' : '') +
+      (isCustom  ? '<span class="zoom-badge" style="border-color:#b0a898;color:#b0a898;margin-left:3px">CUSTOM</span>' : '') + '</div>' +
+      '<div class="lens-meta">FOV <span>' + lens.startFov.toFixed(2) + '&deg;</span>' +
+      (lens.zoom ? ' &rarr; <span>' + lens.endFov.toFixed(2) + '&deg;</span>' : '') + '</div>' +
+      (isCustom ? '<button class="lens-delete" title="Remove">&times;</button>' : '');
+    el.addEventListener('click', e => { if (e.target.classList.contains('lens-delete')) return; selectLens(parseInt(el.dataset.index)); });
     if (isCustom) {
-      el.querySelector('.lens-delete').addEventListener('click', function(e) {
-        e.stopPropagation();
-        const idx = parseInt(el.dataset.index);
+      el.querySelector('.lens-delete').addEventListener('click', e => {
+        e.stopPropagation(); const idx = parseInt(el.dataset.index);
         if (currentLens === LENSES[idx]) selectLens(0);
-        LENSES.splice(idx, 1);
-        rebuildLensList();
+        LENSES.splice(idx, 1); rebuildLensList();
       });
     }
-
     lensList.appendChild(el);
   });
 }
-
-rebuildLensList();
-selectLens(2);
+rebuildLensList(); selectLens(2);
 
 // ================================================================
 // CUSTOM LENS MODAL
 // ================================================================
-const modalOverlay    = document.getElementById('modal-overlay');
-const clName          = document.getElementById('cl-name');
-const clFovStart      = document.getElementById('cl-fov-start');
-const clFovEnd        = document.getElementById('cl-fov-end');
-const clZoom          = document.getElementById('cl-zoom');
-const endFovGroup     = document.getElementById('end-fov-group');
-const zoomToggleLabel = document.getElementById('zoom-toggle-label');
-const modalError      = document.getElementById('modal-error');
+const modalOverlay = document.getElementById('modal-overlay');
+const clName = document.getElementById('cl-name'), clFovStart = document.getElementById('cl-fov-start');
+const clFovEnd = document.getElementById('cl-fov-end'), clZoom = document.getElementById('cl-zoom');
+const endFovGroup = document.getElementById('end-fov-group'), zoomToggleLabel = document.getElementById('zoom-toggle-label');
+const modalError = document.getElementById('modal-error');
 
-function openModal() {
-  clName.value = ''; clFovStart.value = ''; clFovEnd.value = '';
-  clZoom.checked = false;
-  endFovGroup.classList.add('hidden');
-  zoomToggleLabel.textContent = 'Prime \u2014 fixed focal length';
-  modalError.textContent = '';
-  modalOverlay.classList.add('open');
-  setTimeout(() => clName.focus(), 160);
-}
+function openModal()  { clName.value=''; clFovStart.value=''; clFovEnd.value=''; clZoom.checked=false; endFovGroup.classList.add('hidden'); zoomToggleLabel.textContent='Prime \u2014 fixed focal length'; modalError.textContent=''; modalOverlay.classList.add('open'); setTimeout(()=>clName.focus(),160); }
 function closeModal() { modalOverlay.classList.remove('open'); }
 
 document.getElementById('btn-add-lens').addEventListener('click', openModal);
 document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
-
-clZoom.addEventListener('change', () => {
-  const z = clZoom.checked;
-  endFovGroup.classList.toggle('hidden', !z);
-  zoomToggleLabel.textContent = z
-    ? 'Zoom \u2014 variable focal length'
-    : 'Prime \u2014 fixed focal length';
-});
-
+modalOverlay.addEventListener('click', e => { if (e.target===modalOverlay) closeModal(); });
+clZoom.addEventListener('change', () => { const z=clZoom.checked; endFovGroup.classList.toggle('hidden',!z); zoomToggleLabel.textContent = z ? 'Zoom \u2014 variable focal length' : 'Prime \u2014 fixed focal length'; });
 document.getElementById('btn-modal-save').addEventListener('click', () => {
   modalError.textContent = '';
-  const name = clName.value.trim();
-  const sfov = parseFloat(clFovStart.value);
-  const isZ  = clZoom.checked;
-  const efov = isZ ? parseFloat(clFovEnd.value) : sfov;
-
-  if (!name)                                    { modalError.textContent = 'A lens name is required.'; return; }
-  //if (isNaN(sfov) || sfov < 1 || sfov > 179)   { modalError.textContent = 'Start FOV must be between 1\u2013179\u00b0.'; return; }
-  //if (isZ && (isNaN(efov)||efov<1||efov>179))   { modalError.textContent = 'End FOV must be between 1\u2013179\u00b0.'; return; }
-  if (isZ && efov === sfov)                      { modalError.textContent = 'Start and end Focal Length must differ.'; return; }
-
-  const lens = { name, startFov: focalToFov(sfov), endFov: focalToFov(efov), zoom: isZ };
-  LENSES.push(lens);
-  rebuildLensList();
-  closeModal();
-  const newIdx = LENSES.length - 1;
-  setTimeout(() => selectLens(newIdx), 40);
+  const name=clName.value.trim(), sfov=parseFloat(clFovStart.value), isZ=clZoom.checked, efov=isZ?parseFloat(clFovEnd.value):sfov;
+  if (!name) { modalError.textContent='A lens name is required.'; return; }
+  if (isZ && efov===sfov) { modalError.textContent='Start and end focal length must differ.'; return; }
+  LENSES.push({ name, startFov: focalToFov(sfov), endFov: focalToFov(efov), zoom: isZ });
+  rebuildLensList(); closeModal(); setTimeout(() => selectLens(LENSES.length-1), 40);
 });
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && modalOverlay.classList.contains('open')) closeModal();
-});
+document.addEventListener('keydown', e => { if (e.key==='Escape' && modalOverlay.classList.contains('open')) closeModal(); });
 
 // ================================================================
 // EXPORT 16:9
 // ================================================================
 const btnExport = document.getElementById('btn-export');
-
 function exportFrame() {
-  const EW = 1920, EH = 1080;
-
-  // Disable button while working
-  btnExport.disabled = true;
-  btnExport.textContent = 'Saving...';
-
-  // Snapshot camera metadata BEFORE any resize
-  const p  = camera.position;
-  const eu = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
-  const deg = r => (r * 180 / Math.PI).toFixed(1);
-  const fix = n => (n >= 0 ? '+' : '') + n.toFixed(2);
-  const posLine  = 'X ' + fix(p.x) + '   Y ' + fix(p.y) + '   Z ' + fix(p.z);
-  const rotLine  = 'RX ' + deg(eu.x) + '\u00b0   RY ' + deg(eu.y) + '\u00b0   RZ ' + deg(eu.z) + '\u00b0';
-  const lensLine = currentLens.name.toUpperCase();
-  const fovLine  = 'FOV ' + currentFov.toFixed(2) + '\u00b0   ' + fovToMm(currentFov) + 'mm actual   \u2248' + fovToFFMm(currentFov) + 'mm FF';
-
-  // Render scene at export resolution into renderer's own canvas
-  camera.aspect = EW / EH;
-  camera.updateProjectionMatrix();
-  renderer.setSize(EW, EH, false);
-  renderer.render(scene, camera);
-
-  // Pull pixel data directly from WebGL as a data URL
-  // (preserveDrawingBuffer:true ensures it's still valid after render)
-  const sceneDataURL = renderer.domElement.toDataURL('image/png');
-
-  // Restore viewport immediately
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight, false);
-
-  // Load the scene render into a fresh Image, then compose the overlay on a 2D canvas
-  const img = new Image();
-  img.onload = function () {
-    const out = document.createElement('canvas');
-    out.width  = EW;
-    out.height = EH;
-    const ctx = out.getContext('2d');
-
-    // Draw the 3D scene
-    ctx.drawImage(img, 0, 0, EW, EH);
-
-    // Gradient scrim at bottom
-    const grad = ctx.createLinearGradient(0, EH - 140, 0, EH);
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.8)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, EH - 140, EW, 140);
-
-    // Text helper
-    function drawText(text, x, y, font, align) {
-      ctx.save();
-      ctx.font = font;
-      ctx.textAlign = align;
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(0,0,0,1)';
-      ctx.shadowBlur = 14;
-      ctx.shadowOffsetX = 1;
-      ctx.shadowOffsetY = 1;
-      ctx.fillText(text, x, y);
-      ctx.restore();
-    }
-
-    const PAD  = 40;
-    const MONO    = 'bold 20px "Courier New",monospace';
-    const MONO_SM = '17px "Courier New",monospace';
-
-    drawText(posLine,  PAD,       EH - 52, MONO,    'left');
-    drawText(rotLine,  PAD,       EH - 22, MONO,    'left');
-    drawText(lensLine, EW - PAD,  EH - 52, MONO,    'right');
-    drawText(fovLine,  EW - PAD,  EH - 22, MONO_SM, 'right');
-
-    // Download via blob URL (more reliable than toDataURL in some browsers)
-    out.toBlob(function(blob) {
-      const url = URL.createObjectURL(blob);
-      const ts  = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const a   = document.createElement('a');
-      a.href     = url;
-      a.download = 'muxr-previs-' + ts + '.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-
-      // Re-enable button
-      btnExport.disabled = false;
-      btnExport.innerHTML = '&#9678;&nbsp; Export 16:9';
-    }, 'image/png');
+  const EW=1920, EH=1080;
+  btnExport.disabled=true; btnExport.textContent='Saving...';
+  const p=camera.position, eu=new THREE.Euler().setFromQuaternion(camera.quaternion,'YXZ');
+  const deg=r=>(r*180/Math.PI).toFixed(1), fix=n=>(n>=0?'+':'')+n.toFixed(2);
+  const posLine ='X '+fix(p.x)+'   Y '+fix(p.y)+'   Z '+fix(p.z);
+  const rotLine ='RX '+deg(eu.x)+'\u00b0   RY '+deg(eu.y)+'\u00b0   RZ '+deg(eu.z)+'\u00b0';
+  const lensLine=currentLens.name.toUpperCase();
+  const fovLine ='FOV '+currentFov.toFixed(2)+'\u00b0   '+fovToMm(currentFov)+'mm actual   \u2248'+fovToFFMm(currentFov)+'mm FF';
+  camera.aspect=EW/EH; camera.updateProjectionMatrix();
+  renderer.setSize(EW,EH,false); renderer.render(scene,camera);
+  const sceneURL=renderer.domElement.toDataURL('image/png');
+  camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight,false);
+  const img=new Image();
+  img.onload=function(){
+    const out=document.createElement('canvas'); out.width=EW; out.height=EH;
+    const ctx=out.getContext('2d'); ctx.drawImage(img,0,0,EW,EH);
+    const grad=ctx.createLinearGradient(0,EH-140,0,EH); grad.addColorStop(0,'rgba(0,0,0,0)'); grad.addColorStop(1,'rgba(0,0,0,0.8)');
+    ctx.fillStyle=grad; ctx.fillRect(0,EH-140,EW,140);
+    function dt(text,x,y,font,align){ ctx.save(); ctx.font=font; ctx.textAlign=align; ctx.fillStyle='#fff'; ctx.shadowColor='rgba(0,0,0,1)'; ctx.shadowBlur=14; ctx.shadowOffsetX=ctx.shadowOffsetY=1; ctx.fillText(text,x,y); ctx.restore(); }
+    const PAD=40,M='bold 20px "Courier New",monospace',MS='17px "Courier New",monospace';
+    dt(posLine,PAD,EH-52,M,'left'); dt(rotLine,PAD,EH-22,M,'left'); dt(lensLine,EW-PAD,EH-52,M,'right'); dt(fovLine,EW-PAD,EH-22,MS,'right');
+    out.toBlob(blob=>{
+      const url=URL.createObjectURL(blob), ts=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+      const a=document.createElement('a'); a.href=url; a.download='muxr-previs-'+ts+'.png';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+      btnExport.disabled=false; btnExport.innerHTML='&#9678;&nbsp; Export 16:9';
+    },'image/png');
   };
-
-  img.onerror = function() {
-    console.error('Export failed: could not load scene render.');
-    btnExport.disabled = false;
-    btnExport.innerHTML = '&#9678;&nbsp; Export 16:9';
-  };
-
-  img.src = sceneDataURL;
+  img.onerror=()=>{ btnExport.disabled=false; btnExport.innerHTML='&#9678;&nbsp; Export 16:9'; };
+  img.src=sceneURL;
 }
-
 btnExport.addEventListener('click', exportFrame);
 
 // ================================================================
 // MEDIA LOADER
 // ================================================================
 const videoElements = { wall: null, floor: null };
-
 function applyTextureFromDataURL(dataURL, mesh) {
-  const img = new Image();
-  img.onload = function () {
-    // Dispose old map
+  const img=new Image();
+  img.onload=function(){
     if (mesh.material.map) mesh.material.map.dispose();
-
-    const tex = new THREE.Texture(img);
-    tex.wrapS   = THREE.ClampToEdgeWrapping;
-    tex.wrapT   = THREE.ClampToEdgeWrapping;
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-    tex.flipY   = true;
-    tex.needsUpdate = true;
-
-    mesh.material.map = tex;
-    mesh.material.color.set(0xffffff);
-    mesh.material.needsUpdate = true;
+    const tex=new THREE.Texture(img); tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
+    tex.minFilter=tex.magFilter=THREE.LinearFilter; tex.flipY=true; tex.needsUpdate=true;
+    mesh.material.map=tex; mesh.material.color.set(0xffffff); mesh.material.needsUpdate=true;
   };
-  img.src = dataURL;
+  img.src=dataURL;
 }
-
 function applyMediaToMesh(file, mesh, matKey, fnEl) {
-  fnEl.textContent = file.name;
-  fnEl.style.display = 'block';
-
-  // Clean up any existing video — remove from DOM too
-  if (videoElements[matKey]) {
-    const old = videoElements[matKey];
-    old.pause();
-    old.removeAttribute('src');
-    old.load();
-    if (old.parentNode) old.parentNode.removeChild(old);
-    videoElements[matKey] = null;
-  }
-
+  fnEl.textContent=file.name; fnEl.style.display='block';
+  if (videoElements[matKey]) { const o=videoElements[matKey]; o.pause(); o.removeAttribute('src'); o.load(); if (o.parentNode) o.parentNode.removeChild(o); videoElements[matKey]=null; }
   if (file.type.startsWith('video/')) {
-    if (mesh.material.map) {
-      mesh.material.map.dispose();
-      mesh.material.map = null;
-    }
-
-    const blobUrl = URL.createObjectURL(file);
-    const video   = document.createElement('video');
-
-    video.loop        = true;
-    video.muted       = true;
-    video.playsInline = true;
-    video.preload     = 'auto';
-
-    // Firefox requires the video element to be in the DOM to decode media
-    video.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;top:-9999px;left:-9999px;';
+    if (mesh.material.map) { mesh.material.map.dispose(); mesh.material.map=null; }
+    const blobUrl=URL.createObjectURL(file), video=document.createElement('video');
+    video.loop=video.muted=video.playsInline=true; video.preload='auto';
+    video.style.cssText='position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;top:-9999px;left:-9999px;';
     document.body.appendChild(video);
-
-    video.addEventListener('loadeddata', function () {
-      video.play().catch(e => console.warn('play():', e));
-
-      const tex = new THREE.VideoTexture(video);
-      tex.minFilter = THREE.LinearFilter;
-      tex.magFilter = THREE.LinearFilter;
-
-      mesh.material.map = tex;
-      mesh.material.color.set(0xffffff);
-      mesh.material.needsUpdate = true;
-
-      videoElements[matKey] = video;
-    }, { once: true });
-
-    video.addEventListener('error', function () {
-      console.error('Video error:', video.error && video.error.message, file.name);
-      URL.revokeObjectURL(blobUrl);
-    }, { once: true });
-
-    video.src = blobUrl;
-    video.load();
-
+    video.addEventListener('loadeddata',function(){ video.play().catch(e=>console.warn('play():',e)); const tex=new THREE.VideoTexture(video); tex.minFilter=tex.magFilter=THREE.LinearFilter; mesh.material.map=tex; mesh.material.color.set(0xffffff); mesh.material.needsUpdate=true; videoElements[matKey]=video; },{ once:true });
+    video.addEventListener('error',()=>URL.revokeObjectURL(blobUrl),{ once:true });
+    video.src=blobUrl; video.load();
   } else {
-    const reader = new FileReader();
-    reader.onload  = e => applyTextureFromDataURL(e.target.result, mesh);
-    reader.onerror = () => console.error('FileReader failed:', file.name);
-    reader.readAsDataURL(file);
+    const reader=new FileReader(); reader.onload=e=>applyTextureFromDataURL(e.target.result,mesh); reader.onerror=()=>console.error('FileReader failed:',file.name); reader.readAsDataURL(file);
   }
 }
-
-function setupDropZone(dzId, fileId, fnId, mesh, key) {
-  const dz    = document.getElementById(dzId);
-  const input = document.getElementById(fileId);
-  const fn    = document.getElementById(fnId);
-  input.addEventListener('change', e => {
-    if (e.target.files[0]) applyMediaToMesh(e.target.files[0], mesh, key, fn);
-  });
-  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-  dz.addEventListener('drop', e => {
-    e.preventDefault(); dz.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (f && (f.type.startsWith('image/') || f.type.startsWith('video/'))) {
-      applyMediaToMesh(f, mesh, key, fn);
-    }
-  });
+function setupDropZone(dzId,fileId,fnId,mesh,key) {
+  const dz=document.getElementById(dzId),input=document.getElementById(fileId),fn=document.getElementById(fnId);
+  input.addEventListener('change',e=>{ if (e.target.files[0]) applyMediaToMesh(e.target.files[0],mesh,key,fn); });
+  dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',e=>{ e.preventDefault(); dz.classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if (f&&(f.type.startsWith('image/')||f.type.startsWith('video/'))) applyMediaToMesh(f,mesh,key,fn); });
 }
-
-setupDropZone('dz-wall',  'file-wall',  'fn-wall',  wall,  'wall');
-setupDropZone('dz-floor', 'file-floor', 'fn-floor', floor, 'floor');
+setupDropZone('dz-wall','file-wall','fn-wall',wall,'wall');
+setupDropZone('dz-floor','file-floor','fn-floor',floor,'floor');
 
 // ================================================================
-// LOAD MESHES — fetch from meshes/ folder (works on GitHub Pages / any https host)
+// FETCH MESHES
 // ================================================================
-function fetchOBJ(path, proxy, mat) {
-  return fetch(path)
-    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-    .then(text => loadOBJFromText(text, proxy, mat))
-    .catch(err => console.error('Could not load ' + path + ':', err));
+function fetchOBJ(path,proxy,mat) {
+  return fetch(path).then(r=>{ if (!r.ok) throw new Error(r.status); return r.text(); }).then(text=>loadOBJFromText(text,proxy,mat)).catch(err=>console.error('Could not load '+path+':',err));
 }
+fetchOBJ('meshes/wall.obj',      wall,    wallMat);
+fetchOBJ('meshes/floor.obj',     floor,   floorMat);
+fetchOBJ('meshes/StageRoom.obj', room,    StageRoomMat);
+fetchOBJ('meshes/standin.obj',   standin, standinMat).then(()=>applyStandinScale());
 
-fetchOBJ('meshes/wall.obj',    wall,    wallMat);
-fetchOBJ('meshes/floor.obj',   floor,   floorMat);
-
-fetchOBJ('meshes/StageRoom.obj', room,  StageRoomMat); 
-fetchOBJ('meshes/standin.obj', standin, standinMat).then(() => applyStandinScale());
-
-// Stand-in file picker — lets user swap the mesh at any time
-const standinInput = document.getElementById('file-standin');
-const standinFn    = document.getElementById('fn-standin');
-const standinScaleInput = document.getElementById('standin-scale');
-const standinPosXInput = document.getElementById('standin-pos-x');
-const standinPosYInput = document.getElementById('standin-pos-y');
-const standinPosZInput = document.getElementById('standin-pos-z');
-const standinRotXInput = document.getElementById('standin-rot-x');
-const standinRotYInput = document.getElementById('standin-rot-y');
-const standinRotZInput = document.getElementById('standin-rot-z');
+// ================================================================
+// STAND-IN CONTROLS
+// ================================================================
+const standinInput=document.getElementById('file-standin'), standinFn=document.getElementById('fn-standin');
+const standinScaleInput=document.getElementById('standin-scale');
+const sPX=document.getElementById('standin-pos-x'), sPY=document.getElementById('standin-pos-y'), sPZ=document.getElementById('standin-pos-z');
+const sRX=document.getElementById('standin-rot-x'), sRY=document.getElementById('standin-rot-y'), sRZ=document.getElementById('standin-rot-z');
 
 function applyStandinScale() {
-  const s = parseFloat(standinScaleInput.value);
-  if (isNaN(s) || s <= 0) return;
-  for (const m of standin.meshes) m.scale.setScalar(s);
-  // Also apply any position/rotation edits after scaling
-  applyStandinTransform();
+  const s=parseFloat(standinScaleInput.value); if (isNaN(s)||s<=0) return;
+  for (const m of standin.meshes) m.scale.setScalar(s); applyStandinTransform();
 }
-
-standinInput.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  standinFn.textContent = file.name;
-  standinFn.style.display = 'block';
-  const reader = new FileReader();
-  reader.onload = ev => {
-    loadOBJFromText(ev.target.result, standin, standinMat);
-    applyStandinScale();
-  };
-  reader.readAsText(file);
-});
-
-standinScaleInput.addEventListener('input', applyStandinScale);
-// Apply position/rotation from inputs to all standin meshes
 function applyStandinTransform() {
-  const px = parseFloat(standinPosXInput.value);
-  const py = parseFloat(standinPosYInput.value);
-  const pz = parseFloat(standinPosZInput.value);
-  const rx = parseFloat(standinRotXInput.value) * Math.PI / 180;
-  const ry = parseFloat(standinRotYInput.value) * Math.PI / 180;
-  const rz = parseFloat(standinRotZInput.value) * Math.PI / 180;
-
+  const px=parseFloat(sPX.value),py=parseFloat(sPY.value),pz=parseFloat(sPZ.value);
+  const rx=parseFloat(sRX.value)*Math.PI/180, ry=parseFloat(sRY.value)*Math.PI/180, rz=parseFloat(sRZ.value)*Math.PI/180;
   for (const m of standin.meshes) {
-    if (!isNaN(px) && !isNaN(py) && !isNaN(pz)) m.position.set(px, py, pz);
-    if (!isNaN(rx) && !isNaN(ry) && !isNaN(rz)) m.rotation.set(rx, ry, rz);
+    if (!isNaN(px)&&!isNaN(py)&&!isNaN(pz)) m.position.set(px,py,pz);
+    if (!isNaN(rx)&&!isNaN(ry)&&!isNaN(rz)) m.rotation.set(rx,ry,rz);
   }
 }
-
-standinPosXInput.addEventListener('input', applyStandinTransform);
-standinPosYInput.addEventListener('input', applyStandinTransform);
-standinPosZInput.addEventListener('input', applyStandinTransform);
-standinRotXInput.addEventListener('input', applyStandinTransform);
-standinRotYInput.addEventListener('input', applyStandinTransform);
-standinRotZInput.addEventListener('input', applyStandinTransform);
+standinInput.addEventListener('change',e=>{ const file=e.target.files[0]; if (!file) return; standinFn.textContent=file.name; standinFn.style.display='block'; const reader=new FileReader(); reader.onload=ev=>{ loadOBJFromText(ev.target.result,standin,standinMat); applyStandinScale(); }; reader.readAsText(file); });
+standinScaleInput.addEventListener('input', applyStandinScale);
+[sPX,sPY,sPZ,sRX,sRY,sRZ].forEach(el=>el.addEventListener('input',applyStandinTransform));
 
 // ================================================================
 // RENDER LOOP
 // ================================================================
-let lastTime = performance.now();
-
+let lastTime=performance.now();
 function animate() {
   requestAnimationFrame(animate);
-  const now = performance.now();
-  const dt  = Math.min((now - lastTime) / 1000, 0.05);
-  lastTime  = now;
-
+  const now=performance.now(), dt=Math.min((now-lastTime)/1000,0.05); lastTime=now;
   updateCamera(dt);
-
-  currentFov += (targetFov - currentFov) * (1 - Math.pow(0.001, dt));
-  camera.fov  = currentFov;
-  camera.updateProjectionMatrix();
-
-  // Explicitly push new video frames to GPU each tick
-  for (const key of ['wall', 'floor']) {
-    const vid = videoElements[key];
-    if (vid && !vid.paused && vid.readyState >= vid.HAVE_CURRENT_DATA) {
-      const mat = key === 'wall' ? wallMat : floorMat;
-      if (mat.map) mat.map.needsUpdate = true;
-    }
+  currentFov+=(targetFov-currentFov)*(1-Math.pow(0.001,dt));
+  camera.fov=currentFov; camera.updateProjectionMatrix();
+  for (const key of ['wall','floor']) {
+    const vid=videoElements[key];
+    if (vid&&!vid.paused&&vid.readyState>=vid.HAVE_CURRENT_DATA) { const mat=key==='wall'?wallMat:floorMat; if (mat.map) mat.map.needsUpdate=true; }
   }
-
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 animate();
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+window.addEventListener('resize',()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
 </script>
 </body>
 </html>
