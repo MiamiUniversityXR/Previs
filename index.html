@@ -640,19 +640,172 @@ function loadOBJFromText(text, proxy, mat) {
   gm.rotation.x = -Math.PI/2; gm.position.set(0, 0.05, 0); scene.add(gm);
 }());
 
+// Replace the entire CAMERA CONTROLLER section (around line 250-280) with this:
+
 // ================================================================
 // CAMERA CONTROLLER
 // ================================================================
 const keys = {};
 document.addEventListener('keydown', e => { if (!e.target.matches('input,textarea')) keys[e.code] = true; });
 document.addEventListener('keyup',   e => keys[e.code] = false);
-let pitch=0, yaw=0, dragging=false, lastX=0, lastY=0;
-renderer.domElement.addEventListener('mousedown', e => { if (e.target!==renderer.domElement) return; dragging=true; lastX=e.clientX; lastY=e.clientY; });
-document.addEventListener('mouseup',   () => dragging=false);
-document.addEventListener('mousemove', e => { if (!dragging) return; yaw-=(e.clientX-lastX)*0.002; pitch-=(e.clientY-lastY)*0.002; pitch=Math.max(-Math.PI/2.2,Math.min(Math.PI/2.2,pitch)); lastX=e.clientX; lastY=e.clientY; });
-renderer.domElement.addEventListener('touchstart', e => { dragging=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; }, { passive:true });
-document.addEventListener('touchend',  () => dragging=false);
-document.addEventListener('touchmove', e => { if (!dragging) return; yaw-=(e.touches[0].clientX-lastX)*0.003; pitch-=(e.touches[0].clientY-lastY)*0.003; pitch=Math.max(-Math.PI/2.2,Math.min(Math.PI/2.2,pitch)); lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; }, { passive:true });
+
+let pitch = 0, yaw = 0;
+let lookDragging = false, lookTouchId = null;
+let lastLookX = 0, lastLookY = 0;
+
+// Mouse look controls
+renderer.domElement.addEventListener('mousedown', e => {
+  if (e.target !== renderer.domElement) return;
+  lookDragging = true;
+  lastLookX = e.clientX;
+  lastLookY = e.clientY;
+});
+document.addEventListener('mouseup', () => lookDragging = false);
+document.addEventListener('mousemove', e => {
+  if (!lookDragging) return;
+  yaw -= (e.clientX - lastLookX) * 0.002;
+  pitch -= (e.clientY - lastLookY) * 0.002;
+  pitch = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, pitch));
+  lastLookX = e.clientX;
+  lastLookY = e.clientY;
+});
+
+// ================================================================
+// MOBILE TOUCH CONTROLS
+// ================================================================
+let joystickActive = false;
+let joystickOrigin = { x: 0, y: 0 };
+let joystickCurrent = { x: 0, y: 0 };
+let joystickTouchId = null;
+
+// Create joystick UI
+const joystickOuter = document.createElement('div');
+joystickOuter.id = 'joystick-outer';
+joystickOuter.style.cssText = `
+  position: fixed;
+  bottom: 80px;
+  left: 30px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(240, 236, 228, 0.08);
+  border: 2px solid rgba(240, 236, 228, 0.15);
+  display: none;
+  z-index: 30;
+`;
+
+const joystickInner = document.createElement('div');
+joystickInner.id = 'joystick-inner';
+joystickInner.style.cssText = `
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(232, 56, 13, 0.6);
+  border: 2px solid rgba(232, 56, 13, 0.9);
+  transform: translate(-50%, -50%);
+  transition: background 0.15s;
+`;
+
+joystickOuter.appendChild(joystickInner);
+document.body.appendChild(joystickOuter);
+
+// Show joystick on mobile/tablet
+function updateJoystickVisibility() {
+  const isMobile = window.innerWidth <= 1024;
+  joystickOuter.style.display = isMobile ? 'block' : 'none';
+}
+updateJoystickVisibility();
+window.addEventListener('resize', updateJoystickVisibility);
+
+// Touch handlers
+document.addEventListener('touchstart', (e) => {
+  const bottomBarHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bottom-h')) || 48;
+  
+  for (let i = 0; i < e.touches.length; i++) {
+    const touch = e.touches[i];
+    const isAboveBottomBar = touch.clientY < window.innerHeight - bottomBarHeight;
+    
+    if (!isAboveBottomBar) continue;
+    
+    // Left half = joystick movement
+    if (touch.clientX < window.innerWidth / 2 && joystickTouchId === null) {
+      e.preventDefault();
+      joystickTouchId = touch.identifier;
+      joystickActive = true;
+      joystickOrigin.x = touch.clientX;
+      joystickOrigin.y = touch.clientY;
+      joystickCurrent.x = touch.clientX;
+      joystickCurrent.y = touch.clientY;
+      
+      joystickOuter.style.left = (touch.clientX - 60) + 'px';
+      joystickOuter.style.bottom = (window.innerHeight - touch.clientY - 60) + 'px';
+      joystickInner.style.background = 'rgba(232, 56, 13, 0.8)';
+    }
+    // Right half = camera look
+    else if (touch.clientX >= window.innerWidth / 2 && lookTouchId === null) {
+      lookTouchId = touch.identifier;
+      lookDragging = true;
+      lastLookX = touch.clientX;
+      lastLookY = touch.clientY;
+    }
+  }
+}, { passive: false });
+
+document.addEventListener('touchmove', (e) => {
+  for (let i = 0; i < e.touches.length; i++) {
+    const touch = e.touches[i];
+    
+    // Update joystick
+    if (touch.identifier === joystickTouchId) {
+      e.preventDefault();
+      joystickCurrent.x = touch.clientX;
+      joystickCurrent.y = touch.clientY;
+      
+      const dx = joystickCurrent.x - joystickOrigin.x;
+      const dy = joystickCurrent.y - joystickOrigin.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const maxDistance = 60;
+      
+      const clampedDistance = Math.min(distance, maxDistance);
+      const angle = Math.atan2(dy, dx);
+      
+      const offsetX = Math.cos(angle) * clampedDistance;
+      const offsetY = Math.sin(angle) * clampedDistance;
+      
+      joystickInner.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
+    }
+    
+    // Update camera look
+    if (touch.identifier === lookTouchId) {
+      yaw -= (touch.clientX - lastLookX) * 0.003;
+      pitch -= (touch.clientY - lastLookY) * 0.003;
+      pitch = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, pitch));
+      lastLookX = touch.clientX;
+      lastLookY = touch.clientY;
+    }
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', (e) => {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const touch = e.changedTouches[i];
+    
+    if (touch.identifier === joystickTouchId) {
+      joystickActive = false;
+      joystickTouchId = null;
+      joystickInner.style.transform = 'translate(-50%, -50%)';
+      joystickInner.style.background = 'rgba(232, 56, 13, 0.6)';
+    }
+    
+    if (touch.identifier === lookTouchId) {
+      lookDragging = false;
+      lookTouchId = null;
+    }
+  }
+}, { passive: false });
 
 function updateCamera(dt) {
   const speed = (keys['ShiftLeft']||keys['ShiftRight']) ? 8 : 2.5;
@@ -668,153 +821,23 @@ function updateCamera(dt) {
   if (keys['KeyE']) camera.position.y -= speed*dt*0.5;
   
   // Mobile joystick controls
-  if (typeof getJoystickInput !== 'undefined') {
-    const joy = getJoystickInput();
-    if (joy.x !== 0 || joy.y !== 0) {
-      camera.position.addScaledVector(right, joy.x * speed * dt);
-      camera.position.addScaledVector(fwd, -joy.y * speed * dt);
-    }
-  }
-  
-  camera.position.y = Math.max(0.2, camera.position.y);
-  const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), yaw);
-  const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), pitch);
-  camera.quaternion.copy(qY).multiply(qX);
-}
-
-// ================================================================
-// MOBILE TOUCH CONTROLS
-// ================================================================
-(function() {
-  let joystickActive = false;
-  let joystickOrigin = { x: 0, y: 0 };
-  let joystickCurrent = { x: 0, y: 0 };
-  let joystickTouchId = null;
-  
-  // Create joystick UI
-  const joystickOuter = document.createElement('div');
-  joystickOuter.id = 'joystick-outer';
-  joystickOuter.style.cssText = `
-    position: fixed;
-    bottom: 80px;
-    left: 30px;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: rgba(240, 236, 228, 0.08);
-    border: 2px solid rgba(240, 236, 228, 0.15);
-    display: none;
-    pointer-events: none;
-    z-index: 30;
-  `;
-  
-  const joystickInner = document.createElement('div');
-  joystickInner.id = 'joystick-inner';
-  joystickInner.style.cssText = `
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: rgba(232, 56, 13, 0.6);
-    border: 2px solid rgba(232, 56, 13, 0.9);
-    transform: translate(-50%, -50%);
-    transition: background 0.15s;
-  `;
-  
-  joystickOuter.appendChild(joystickInner);
-  document.body.appendChild(joystickOuter);
-  
-  // Show joystick on mobile/tablet
-  function updateJoystickVisibility() {
-    const isMobile = window.innerWidth <= 1024;
-    joystickOuter.style.display = isMobile ? 'block' : 'none';
-  }
-  updateJoystickVisibility();
-  window.addEventListener('resize', updateJoystickVisibility);
-  
-  // Touch handlers for joystick
-  renderer.domElement.addEventListener('touchstart', e => {
-  const touch = e.touches[0];
-  // Only activate look controls on right half of screen
-  if (touch.clientX >= window.innerWidth / 2) {
-    dragging = true;
-    lastX = touch.clientX;
-    lastY = touch.clientY;
-  }
-}, { passive: true });
-
-document.addEventListener('touchmove', e => {
-  if (!dragging) return;
-  // Find the touch that started the drag
-  for (let i = 0; i < e.touches.length; i++) {
-    const touch = e.touches[i];
-    if (touch.clientX >= window.innerWidth / 2) {
-      yaw -= (touch.clientX - lastX) * 0.003;
-      pitch -= (touch.clientY - lastY) * 0.003;
-      pitch = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, pitch));
-      lastX = touch.clientX;
-      lastY = touch.clientY;
-      break;
-    }
-  }
-}, { passive: true });
-  
-  document.addEventListener('touchmove', (e) => {
-    if (!joystickActive) return;
-    
-    for (let i = 0; i < e.touches.length; i++) {
-      if (e.touches[i].identifier === joystickTouchId) {
-        const touch = e.touches[i];
-        joystickCurrent.x = touch.clientX;
-        joystickCurrent.y = touch.clientY;
-        
-        // Calculate offset from origin
-        const dx = joystickCurrent.x - joystickOrigin.x;
-        const dy = joystickCurrent.y - joystickOrigin.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const maxDistance = 60;
-        
-        // Clamp to max distance
-        const clampedDistance = Math.min(distance, maxDistance);
-        const angle = Math.atan2(dy, dx);
-        
-        const offsetX = Math.cos(angle) * clampedDistance;
-        const offsetY = Math.sin(angle) * clampedDistance;
-        
-        joystickInner.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
-        break;
-      }
-    }
-  }, { passive: true });
-  
-  document.addEventListener('touchend', (e) => {
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === joystickTouchId) {
-        joystickActive = false;
-        joystickTouchId = null;
-        joystickInner.style.transform = 'translate(-50%, -50%)';
-        joystickInner.style.background = 'rgba(232, 56, 13, 0.6)';
-        break;
-      }
-    }
-  }, { passive: true });
-  
-  // Update camera based on joystick
-  window.getJoystickInput = function() {
-    if (!joystickActive) return { x: 0, y: 0 };
-    
+  if (joystickActive) {
     const dx = joystickCurrent.x - joystickOrigin.x;
     const dy = joystickCurrent.y - joystickOrigin.y;
     const maxDistance = 60;
     
-    return {
-      x: Math.max(-1, Math.min(1, dx / maxDistance)),
-      y: Math.max(-1, Math.min(1, dy / maxDistance))
-    };
-  };
-})();
+    const joyX = Math.max(-1, Math.min(1, dx / maxDistance));
+    const joyY = Math.max(-1, Math.min(1, dy / maxDistance));
+    
+    camera.position.addScaledVector(right, joyX * speed * dt);
+    camera.position.addScaledVector(fwd, -joyY * speed * dt);
+  }
+  
+  camera.position.y = Math.max(0.2, camera.position.y);
+  const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), yaw);
+  const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), pitch);
+  camera.quaternion.copy(qY).multiply(qX);
+}
 
 // ================================================================
 // FOV / LENS SYSTEM
