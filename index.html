@@ -835,7 +835,7 @@ function updateCamera(dt) {
   
   camera.position.y = Math.max(0.2, camera.position.y);
   const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), yaw);
-  const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), pitch);
+  const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), pitch);
   camera.quaternion.copy(qY).multiply(qX);
 }
 
