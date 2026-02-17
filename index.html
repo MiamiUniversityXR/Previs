@@ -721,8 +721,15 @@ updateJoystickVisibility();
 window.addEventListener('resize', updateJoystickVisibility);
 
 // Touch handlers
+// Update the touchstart event listener (around line 310):
+
 document.addEventListener('touchstart', (e) => {
   const bottomBarHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bottom-h')) || 48;
+  
+  // Check if panels are open
+  const panelLeftOpen = document.getElementById('panel-left').classList.contains('open');
+  const panelRightOpen = document.getElementById('panel-right').classList.contains('open');
+  const panelsOpen = panelLeftOpen || panelRightOpen;
   
   for (let i = 0; i < e.touches.length; i++) {
     const touch = e.touches[i];
@@ -730,8 +737,8 @@ document.addEventListener('touchstart', (e) => {
     
     if (!isAboveBottomBar) continue;
     
-    // Left half = joystick movement
-    if (touch.clientX < window.innerWidth / 2 && joystickTouchId === null) {
+    // Left half = joystick movement (disabled when panels open)
+    if (touch.clientX < window.innerWidth / 2 && joystickTouchId === null && !panelsOpen) {
       e.preventDefault();
       joystickTouchId = touch.identifier;
       joystickActive = true;
@@ -807,21 +814,31 @@ document.addEventListener('touchend', (e) => {
   }
 }, { passive: false });
 
+// Update the updateCamera function to use camera-relative movement:
+
 function updateCamera(dt) {
   const speed = (keys['ShiftLeft']||keys['ShiftRight']) ? 8 : 2.5;
-  const fwd   = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
-  const right = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
+  
+  // Get camera's forward and right vectors (full 3D, not locked to horizontal)
+  const forward = new THREE.Vector3();
+  const right = new THREE.Vector3();
+  camera.getWorldDirection(forward);
+  right.crossVectors(camera.up, forward).normalize();
   
   // Keyboard controls
-  if (keys['KeyW']||keys['ArrowUp'])    camera.position.addScaledVector(fwd,    speed*dt);
-  if (keys['KeyS']||keys['ArrowDown'])  camera.position.addScaledVector(fwd,   -speed*dt);
-  if (keys['KeyA']||keys['ArrowLeft'])  camera.position.addScaledVector(right, -speed*dt);
-  if (keys['KeyD']||keys['ArrowRight']) camera.position.addScaledVector(right,  speed*dt);
+  if (keys['KeyW']||keys['ArrowUp'])    camera.position.addScaledVector(forward, speed*dt);
+  if (keys['KeyS']||keys['ArrowDown'])  camera.position.addScaledVector(forward, -speed*dt);
+  if (keys['KeyA']||keys['ArrowLeft'])  camera.position.addScaledVector(right, speed*dt);
+  if (keys['KeyD']||keys['ArrowRight']) camera.position.addScaledVector(right, -speed*dt);
   if (keys['KeyQ']) camera.position.y += speed*dt*0.5;
   if (keys['KeyE']) camera.position.y -= speed*dt*0.5;
   
-  // Mobile joystick controls
-  if (joystickActive) {
+  // Mobile joystick controls (only if panels are closed)
+  const panelLeftOpen = document.getElementById('panel-left').classList.contains('open');
+  const panelRightOpen = document.getElementById('panel-right').classList.contains('open');
+  const panelsOpen = panelLeftOpen || panelRightOpen;
+  
+  if (joystickActive && !panelsOpen) {
     const dx = joystickCurrent.x - joystickOrigin.x;
     const dy = joystickCurrent.y - joystickOrigin.y;
     const maxDistance = 60;
@@ -829,8 +846,8 @@ function updateCamera(dt) {
     const joyX = Math.max(-1, Math.min(1, dx / maxDistance));
     const joyY = Math.max(-1, Math.min(1, dy / maxDistance));
     
-    camera.position.addScaledVector(right, joyX * speed * dt);
-    camera.position.addScaledVector(fwd, -joyY * speed * dt);
+    camera.position.addScaledVector(right, -joyX * speed * dt);
+    camera.position.addScaledVector(forward, -joyY * speed * dt);
   }
   
   camera.position.y = Math.max(0.2, camera.position.y);
